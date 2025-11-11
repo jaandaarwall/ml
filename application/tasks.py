@@ -1,7 +1,7 @@
 from celery import shared_task
 from .models import User, Appointment
 from .mail import send_email
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import csv
 
 @shared_task

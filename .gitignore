@@ -15,3 +15,6 @@ hms.db
 
 # Celery
 celerybeat-schedule
+
+# Vite
+.vite/
