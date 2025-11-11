@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from application.models import User, Roles
 from application.config import LocalDevelopmentConfig
 from flask_security import Security, SQLAlchemyUserDatastore
@@ -12,6 +13,7 @@ import uuid
 
 def create_app():
     app = Flask(__name__)
+    CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
     app.config.from_object(LocalDevelopmentConfig)
     db.init_app(app)
     init_api(app)
