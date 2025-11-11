@@ -1,8 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import UserMixin, RoleMixin
 from datetime import datetime
-
-db = SQLAlchemy()
+from .database import db
 
 # Association table for User-Roles (Many-to-Many)
 user_roles = db.Table('user_roles',

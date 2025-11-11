@@ -2,57 +2,13 @@ from celery import shared_task
 from datetime import datetime, date, timedelta
 import csv
 import os
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
+from .mail import send_email
+from .models import db, Appointment, Patient, Doctor
 
-# Email Configuration
-SMTP_SERVER_HOST = "localhost"  # Change to your SMTP server
-SMTP_SERVER_PORT = 1025  # Mailhog default port
-SENDER_ADDRESS = "hospital@noreply.com"
-SENDER_PASSWORD = ""
-
-
-def send_email(to_address, subject, message, content="html", attachment_file=None):
-    """Send email with optional attachment"""
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_ADDRESS
-        msg['To'] = to_address
-        msg['Subject'] = subject
-
-        if content == "html":
-            msg.attach(MIMEText(message, "html"))
-        else:
-            msg.attach(MIMEText(message, "plain"))
-
-        if attachment_file and os.path.exists(attachment_file):
-            with open(attachment_file, 'rb') as attachment:
-                part = MIMEBase("application", "octet-stream")
-                part.set_payload(attachment.read())
-            
-            encoders.encode_base64(part)
-            filename = os.path.basename(attachment_file)
-            part.add_header("Content-Disposition", f"attachment; filename={filename}")
-            msg.attach(part)
-
-        s = smtplib.SMTP(host=SMTP_SERVER_HOST, port=SMTP_SERVER_PORT)
-        s.login(SENDER_ADDRESS, SENDER_PASSWORD)
-        s.send_message(msg)
-        s.quit()
-        return True
-    except Exception as e:
-        print(f"Email sending failed: {e}")
-        return False
-
-
-@shared_task(ignore_results=False, name="tasks.send_daily_reminders")
+@shared_task(ignore_results=False, name="application.tasks.send_daily_reminders")
 def send_daily_reminders():
     """Send daily appointment reminders to patients"""
     from app import app
-    from models import Appointment, Patient, Doctor
     
     with app.app_context():
         today = date.today()
@@ -96,13 +52,10 @@ def send_daily_reminders():
                 if send_email(patient_user.email, "Appointment Reminder - Today", message):
                     reminders_sent += 1
                     
-                # Optional: Send to Google Chat (if webhook configured)
-                # send_google_chat_reminder(patient_user, appointment)
-        
         return f"Daily reminders sent: {reminders_sent}"
 
 
-@shared_task(ignore_results=False, name="tasks.send_monthly_reports")
+@shared_task(ignore_results=False, name="application.tasks.send_monthly_reports")
 def send_monthly_reports():
     """Send monthly activity reports to doctors"""
     from app import app
@@ -192,7 +145,7 @@ def send_monthly_reports():
         return f"Monthly reports sent to {reports_sent} doctors"
 
 
-@shared_task(ignore_results=False, name="tasks.export_treatment_csv")
+@shared_task(ignore_results=False, name="application.tasks.export_treatment_csv")
 def export_treatment_csv(patient_id):
     """Export patient's treatment history as CSV"""
     from app import app
