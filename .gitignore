@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-selfcheck.json
+
+# Database
+instance/
+hms.db
+*.sqlite3
+
+# Celery
+celerybeat-schedule
