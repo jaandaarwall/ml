@@ -1,15 +1,16 @@
-import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-export const useMessageStore = defineStore('messageStore', () => {
-  const errorMessages = ref('')
+export const useMessageStore = defineStore('message', {
+  state: () => ({
+    errorMessages: null
+  }),
   
-  function updateErrorMessages(message) {
-    errorMessages.value = message
-    setTimeout(() => {
-      errorMessages.value = ''
-    },5000)
+  actions: {
+    updateErrorMessages(message) {
+      this.errorMessages = message
+      setTimeout(() => {
+        this.errorMessages = null
+      }, 5000)
+    }
   }
-
-  return { errorMessages, updateErrorMessages }
 })

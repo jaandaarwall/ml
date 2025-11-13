@@ -48,8 +48,6 @@ function logout() {
           <li class="nav-item" v-if="auth_store.isAuthenticated">
             <a class="nav-link" @click="logout">Logout</a>
           </li>
-
-
         </ul>
         <form class="d-flex" role="search">
           <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>

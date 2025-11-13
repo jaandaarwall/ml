@@ -2,7 +2,9 @@
 import {ref} from 'vue';
 import { useMessageStore } from '@/stores/counter.js';
 import { useAuthStore } from '@/stores/auth.js';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const message_store = useMessageStore();
 const auth_store = useAuthStore();
 
@@ -22,25 +24,34 @@ async function login(){
         },
         body: JSON.stringify(user) 
     })
+    
     if (!response.ok){
         const errordata = await response.json();
-        alert(errordata.message);
+        message_store.updateErrorMessages(errordata.message);
     }
     else {
         const data = await response.json()
-        // alert(data.message);
         message_store.updateErrorMessages(data.message);
+        
         const user = {
             email: data.user_details.email,
             roles: data.user_details.roles,
         }
         auth_store.setUserCred(data.user_details.auth_token, user)
-
-        console.log(localStorage.getItem('token'))
+        
+        // Redirect based on role
+        if (auth_store.isAdmin) {
+            router.push('/admin/dashboard')
+        } else if (auth_store.isDoctor) {
+            router.push('/doctor/dashboard')
+        } else {
+            router.push('/patient/dashboard')
+        }
     }
 }
 
 </script>
+
 
 <template>
     <div class="container-fluid">

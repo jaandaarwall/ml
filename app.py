@@ -96,15 +96,54 @@ def init_db(app):
 
 
 from backend.authentication_apis import LoginAPI, LogoutAPI, RegisterAPI, CheckEmailAPI
+from backend.admin_apis import (AdminDashboardAPI, AdminDoctorsAPI, AdminAddDoctorAPI, 
+                                AdminDoctorDetailAPI, AdminPatientsAPI, AdminPatientDetailAPI,
+                                AdminAppointmentsAPI, AdminSearchAPI, DepartmentsAPI)
+from backend.doctor_apis import (DoctorDashboardAPI, DoctorAppointmentsAPI, DoctorPatientsAPI,
+                                 DoctorAvailabilityAPI, DoctorCompleteAppointmentAPI, DoctorTreatmentAPI,
+                                 DoctorPatientHistoryAPI, DoctorProfileAPI)
+from backend.patient_apis import (PatientDashboardAPI, PatientDoctorsAPI, PatientDoctorAvailabilityAPI,
+                                  PatientBookAppointmentAPI, PatientAppointmentsAPI, PatientCancelAppointmentAPI,
+                                  PatientHistoryAPI, PatientProfileAPI)
+
+# Auth APIs
 api.add_resource(LoginAPI, '/login')
 api.add_resource(LogoutAPI, '/logout')
 api.add_resource(RegisterAPI, '/register')
 api.add_resource(CheckEmailAPI, '/check-email')
 
-from backend.crud_apis import CategoryCrudAPI
-api.add_resource(CategoryCrudAPI, '/categories', '/categories/<int:category_id>')
+# Admin APIs
+api.add_resource(AdminDashboardAPI, '/admin/dashboard')
+api.add_resource(AdminDoctorsAPI, '/admin/doctors')
+api.add_resource(AdminAddDoctorAPI, '/admin/doctor/add')
+api.add_resource(AdminDoctorDetailAPI, '/admin/doctor/<int:doctor_id>')
+api.add_resource(AdminPatientsAPI, '/admin/patients')
+api.add_resource(AdminPatientDetailAPI, '/admin/patient/<int:patient_id>')
+api.add_resource(AdminAppointmentsAPI, '/admin/appointments')
+api.add_resource(AdminSearchAPI, '/admin/search')
 
+# Doctor APIs
+api.add_resource(DoctorDashboardAPI, '/doctor/dashboard')
+api.add_resource(DoctorAppointmentsAPI, '/doctor/appointments')
+api.add_resource(DoctorPatientsAPI, '/doctor/patients')
+api.add_resource(DoctorAvailabilityAPI, '/doctor/availability')
+api.add_resource(DoctorCompleteAppointmentAPI, '/doctor/appointment/<int:appointment_id>/complete')
+api.add_resource(DoctorTreatmentAPI, '/doctor/appointment/<int:appointment_id>/treatment')
+api.add_resource(DoctorPatientHistoryAPI, '/doctor/patient/<int:patient_id>/history')
+api.add_resource(DoctorProfileAPI, '/doctor/profile')
 
+# Patient APIs
+api.add_resource(PatientDashboardAPI, '/patient/dashboard')
+api.add_resource(PatientDoctorsAPI, '/patient/doctors')
+api.add_resource(PatientDoctorAvailabilityAPI, '/patient/doctor/<int:doctor_id>/availability')
+api.add_resource(PatientBookAppointmentAPI, '/patient/book/<int:doctor_id>')
+api.add_resource(PatientAppointmentsAPI, '/patient/appointments')
+api.add_resource(PatientCancelAppointmentAPI, '/patient/appointment/<int:appointment_id>/cancel')
+api.add_resource(PatientHistoryAPI, '/patient/history')
+api.add_resource(PatientProfileAPI, '/patient/profile')
+
+# General APIs
+api.add_resource(DepartmentsAPI, '/departments')
 
 @app.route("/start-task", methods=["GET"])
 def start_task():
