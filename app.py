@@ -108,7 +108,7 @@ with app.app_context():
 @app.route('/')
 def index():
     """Main landing page"""
-    return render_template('index.html')
+    return render_template('index.html', user=current_user)
 
 
 @app.route('/api/register', methods=['POST'])

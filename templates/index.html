@@ -163,7 +163,9 @@
                         </li>
                         <li class="nav-item dropdown" v-if="isAuthenticated">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person-circle"></i> {{ user.full_name }}
+                                <i class="bi bi-person-circle"></i> {% if user.is_authenticated %}
+                                    {{ user.full_name }}
+                                {% endif %}
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="#" @click.prevent="viewProfile">Profile</a></li>
