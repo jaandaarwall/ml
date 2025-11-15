@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.js'
 
@@ -219,7 +219,6 @@ function openTreatmentModal(aptId) {
     </div>
   </div>
 
-  <!-- Treatment Modal -->
   <div class="modal fade" id="treatmentModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -251,6 +250,268 @@ function openTreatmentModal(aptId) {
             </div>
             <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">Save Treatment</button>
           </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</template> -->
+
+
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth.js'
+
+const authStore = useAuthStore()
+const dashboard = ref(null)
+const doctors = ref([])
+const departments = ref([])
+const selectedDepartment = ref('')
+const selectedDoctor = ref(null)
+const selectedDate = ref('')
+const availableSlots = ref([])
+const bookingData = ref({
+  time: '',
+  reason: ''
+})
+
+onMounted(async () => {
+  await fetchDashboard()
+  await fetchDepartments()
+  await fetchDoctors()
+})
+
+async function fetchDashboard() {
+  const response = await fetch('http://127.0.0.1:5000/api/patient/dashboard', {
+    headers: authStore.getAuthHeader()
+  })
+  if (response.ok) {
+    dashboard.value = await response.json()
+  }
+}
+
+async function fetchDepartments() {
+  const response = await fetch('http://127.0.0.1:5000/api/departments')
+  if (response.ok) {
+    departments.value = await response.json()
+  }
+}
+
+async function fetchDoctors() {
+  let url = 'http://127.0.0.1:5000/api/patient/doctors'
+  if (selectedDepartment.value) {
+    url += `?department_id=${selectedDepartment.value}`
+  }
+  
+  const response = await fetch(url, {
+    headers: authStore.getAuthHeader()
+  })
+  if (response.ok) {
+    doctors.value = await response.json()
+  }
+}
+
+async function selectDoctor(doctor) {
+  selectedDoctor.value = doctor
+  availableSlots.value = []
+  selectedDate.value = ''
+}
+
+async function checkAvailability() {
+  if (!selectedDoctor.value || !selectedDate.value) return
+  
+  const response = await fetch(
+    `http://127.0.0.1:5000/api/patient/doctor/${selectedDoctor.value.id}/availability?date=${selectedDate.value}`,
+    { headers: authStore.getAuthHeader() }
+  )
+  if (response.ok) {
+    availableSlots.value = await response.json()
+  }
+}
+
+async function bookAppointment() {
+  if (!bookingData.value.time || !bookingData.value.reason) {
+    alert('Please select a time slot and provide a reason')
+    return
+  }
+  
+  const response = await fetch(
+    `http://127.0.0.1:5000/api/patient/book/${selectedDoctor.value.id}`,
+    {
+      method: 'POST',
+      headers: authStore.getAuthHeader(),
+      body: JSON.stringify({
+        date: selectedDate.value,
+        time: bookingData.value.time,
+        reason: bookingData.value.reason
+      })
+    }
+  )
+  
+  const data = await response.json()
+  alert(data.message)
+  
+  if (response.ok) {
+    bookingData.value = { time: '', reason: '' }
+    selectedDoctor.value = null
+    await fetchDashboard()
+  }
+}
+
+async function cancelAppointment(aptId) {
+  if (!confirm('Are you sure you want to cancel this appointment?')) return
+  
+  const response = await fetch(
+    `http://127.0.0.1:5000/api/patient/appointment/${aptId}/cancel`,
+    {
+      method: 'POST',
+      headers: authStore.getAuthHeader()
+    }
+  )
+  
+  if (response.ok) {
+    alert('Appointment cancelled successfully')
+    await fetchDashboard()
+  }
+}
+</script>
+
+<template>
+  <div class="container-fluid mt-4">
+    <h1 class="mb-4">Patient Dashboard</h1>
+    
+    <div class="row mb-4" v-if="dashboard">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h5>Upcoming Appointments</h5>
+          </div>
+          <div class="card-body">
+            <div v-if="dashboard.upcoming_appointments.length === 0">
+              <p class="text-muted">No upcoming appointments</p>
+            </div>
+            <div v-else class="list-group">
+              <div v-for="apt in dashboard.upcoming_appointments" :key="apt.id" class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6>Dr. {{ apt.doctor_name }}</h6>
+                    <p class="mb-1">{{ apt.department }}</p>
+                    <small>{{ apt.date }} at {{ apt.time }}</small>
+                  </div>
+                  <button class="btn btn-sm btn-danger" @click="cancelAppointment(apt.id)">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-success text-white">
+            <h5>Past Appointments</h5>
+          </div>
+          <div class="card-body">
+            <div v-if="dashboard.past_appointments.length === 0">
+              <p class="text-muted">No past appointments</p>
+            </div>
+            <div v-else class="list-group">
+              <div v-for="apt in dashboard.past_appointments" :key="apt.id" class="list-group-item">
+                <h6>Dr. {{ apt.doctor_name }}</h6>
+                <small>{{ apt.date }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h5>Book New Appointment</h5>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Select Department</label>
+            <select class="form-select" v-model="selectedDepartment" @change="fetchDoctors">
+              <option value="">All Departments</option>
+              <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                {{ dept.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <h6>Available Doctors</h6>
+            <div class="row">
+              <div v-for="doctor in doctors" :key="doctor.id" class="col-md-4 mb-3">
+                <div class="card" :class="{'border-primary': selectedDoctor?.id === doctor.id}">
+                  <div class="card-body">
+                    <h6>{{ doctor.name }}</h6>
+                    <p class="mb-1">{{ doctor.department }}</p>
+                    <p class="mb-1"><small>{{ doctor.qualification }}</small></p>
+                    <p class="mb-1"><small>Experience: {{ doctor.experience_years }} years</small></p>
+                    <button class="btn btn-sm btn-primary mt-2" 
+                            @click="selectDoctor(doctor)"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#bookingModal">
+                      Book Appointment
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking Modal -->
+  <div class="modal fade" id="bookingModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Book Appointment with Dr. {{ selectedDoctor?.name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Select Date</label>
+            <input type="date" class="form-control" v-model="selectedDate" 
+                   :min="new Date().toISOString().split('T')[0]"
+                   @change="checkAvailability">
+          </div>
+
+          <div v-if="availableSlots.length > 0" class="mb-3">
+            <label class="form-label">Select Time Slot</label>
+            <div class="d-flex flex-wrap gap-2">
+              <button v-for="slot in availableSlots" :key="slot.time"
+                      class="btn btn-sm"
+                      :class="bookingData.time === slot.time ? 'btn-primary' : 'btn-outline-primary'"
+                      @click="bookingData.time = slot.time">
+                {{ slot.time }}
+              </button>
+            </div>
+          </div>
+
+          <div v-else-if="selectedDate" class="alert alert-info">
+            No available slots for this date
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Reason for Visit</label>
+            <textarea class="form-control" v-model="bookingData.reason" rows="3" required></textarea>
+          </div>
+
+          <button type="button" class="btn btn-primary" @click="bookAppointment" data-bs-dismiss="modal">
+            Confirm Booking
+          </button>
         </div>
       </div>
     </div>

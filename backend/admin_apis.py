@@ -41,14 +41,20 @@ class AdminDoctorsAPI(Resource):
             })
         return make_response(jsonify(doctors_list), 200)
 
+
 class AdminAddDoctorAPI(Resource):
     @auth_token_required
     @roles_required('admin')
     def post(self):
+        from flask_security import utils
         data = request.get_json()
         
         if user_datastore.find_user(email=data['email']):
             return make_response(jsonify({'message': 'Email already exists'}), 409)
+        
+        if user_datastore.find_user(username=data['username']):
+            return make_response(jsonify({'message': 'Username already exists'}), 409)
+        
         
         doctor_role = user_datastore.find_role('doctor')
         user_role = user_datastore.find_role('user')
@@ -56,10 +62,13 @@ class AdminAddDoctorAPI(Resource):
         user = user_datastore.create_user(
             username=data['username'],
             email=data['email'],
-            password=data['password'],
+            password=utils.hash_password(data['password']),
             phone=data.get('phone'),
             roles=[doctor_role, user_role]
         )
+        
+        db.session.add(user)
+        db.session.commit()
         
         doctor = Doctor(
             user_id=user.id,
