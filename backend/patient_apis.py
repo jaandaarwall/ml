@@ -177,8 +177,30 @@ class PatientBookAppointmentAPI(Resource):
         
         db.session.add(appointment)
         db.session.commit()
-        
-        return make_response(jsonify({'message': 'Appointment booked successfully'}), 201)
+                
+        doctor = Doctor.query.get(doctor_id)
+        price = doctor.department.price   # Price based on department
+
+        payment = Payment(
+            appointment_id=appointment.id,
+            amount=price,
+            status='Pending'
+        )
+        db.session.add(payment)
+        db.session.commit()
+
+        payment_link = f"http://localhost:5173/payment/{payment.id}"
+
+        # return make_response(jsonify({'message': 'Appointment booked successfully'}), 201)
+        return make_response(jsonify({
+            "message": "Appointment booked successfully",
+            "appointment_id": appointment.id,
+            "payment_id": payment.id,
+            "amount": price,
+            "payment_url": payment_link
+        }), 201)
+
+
 
 class PatientAppointmentsAPI(Resource):
     @auth_token_required

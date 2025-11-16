@@ -65,6 +65,7 @@ class Department(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text)
+    price = db.Column(db.Float, default=300.0)   # NEW FIELD
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     doctors = db.relationship('Doctor', backref='department', lazy=True)
@@ -110,3 +111,12 @@ class Treatment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointment.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='Pending')  # Pending, Success, Failed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    appointment = db.relationship('Appointment', backref='payment', uselist=False)

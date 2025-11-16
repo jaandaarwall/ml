@@ -50,15 +50,15 @@ class TaskSendEmailAPI(Resource):
 # -------------------------------
 # Trigger daily appointment reminders manually
 # -------------------------------
-class TaskDailyReminderAPI(Resource):
-    @auth_token_required
-    @roles_required('admin')
-    def get(self):
-        task = send_daily_reminders.delay()
-        return make_response(jsonify({
-            "message": "Daily reminder task queued",
-            "task_id": task.id
-        }), 202)
+# class TaskDailyReminderAPI(Resource):
+#     @auth_token_required
+#     @roles_required('admin')
+#     def get(self):
+#         task = send_daily_reminders.delay()
+#         return make_response(jsonify({
+#             "message": "Daily reminder task queued",
+#             "task_id": task.id
+#         }), 202)
 
 
 # -------------------------------

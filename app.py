@@ -8,6 +8,8 @@ from backend.models import *
 from backend.user_datastore import user_datastore
 from flask_security import Security, utils
 import time
+from backend.payment_apis import DummyPaymentAPI
+
 
 from flask_restful import Api
 from flask_cors import CORS
@@ -60,12 +62,12 @@ def init_db(app):
             )
         
         for dept_data in [
-            {'name': 'Cardiology', 'description': 'Heart and cardiovascular system'},
-            {'name': 'Neurology', 'description': 'Brain and nervous system'},
-            {'name': 'Orthopedics', 'description': 'Bones and muscles'},
-            {'name': 'Pediatrics', 'description': 'Children healthcare'},
-            {'name': 'Dermatology', 'description': 'Skin, hair, and nails'},
-            {'name': 'General Medicine', 'description': 'General health issues'}
+            {'name': 'Cardiology', 'description': 'Heart and cardiovascular system', 'price': 300.0},
+            {'name': 'Neurology', 'description': 'Brain and nervous system', 'price': 400.0},
+            {'name': 'Orthopedics', 'description': 'Bones and muscles', 'price': 500.0},
+            {'name': 'Pediatrics', 'description': 'Children healthcare', 'price': 600.0},
+            {'name': 'Dermatology', 'description': 'Skin, hair, and nails', 'price': 700.0},
+            {'name': 'General Medicine', 'description': 'General health issues', 'price': 800.0}
         ]:
             existing = Department.query.filter_by(name=dept_data['name']).first()
             if not existing:
@@ -123,10 +125,12 @@ api.add_resource(PatientProfileAPI, '/patient/profile')
 
 # General APIs
 api.add_resource(DepartmentsAPI, '/departments')
+api.add_resource(DummyPaymentAPI, '/payment/<int:payment_id>/pay')
+
 
 # @app.route("/start-task", methods=["GET"])
 # def start_task():
-#     task = example_task.delay()
+#     task = example_task.delay()F
 #     return jsonify({"task_id": task.id}), 202
 
 # @app.route("/email-check", methods=["GET"])
@@ -134,22 +138,34 @@ api.add_resource(DepartmentsAPI, '/departments')
 #     task = sheduler_task.delay("1@example.com", "Test Subject", "Test Body")
 #     return jsonify({"task_id": task.id}), 202
 
-# @celery.on_after_finalize.connect 
-# def setup_periodic_tasks(sender, **kwargs):
-#     # Send daily reminders at 8 AM every day
-#     sender.add_periodic_task(
-#         crontab(),
-#         send_daily_reminders.s(),
-#         name='Daily appointment reminders'
-#     )
+@celery.on_after_finalize.connect 
+def setup_periodic_tasks(sender, **kwargs):
+    # Send daily reminders at 8 AM every day
+    sender.add_periodic_task(
+        crontab(),
+        send_daily_reminders.s(),
+        name='Daily appointment reminders'
+    )
 
 
 # Task APIs
 api.add_resource(TaskExampleAPI, '/task/example')
 api.add_resource(TaskSendEmailAPI, '/task/send-email')
-api.add_resource(TaskDailyReminderAPI, '/task/daily-reminder')
+# api.add_resource(TaskDailyReminderAPI, '/task/daily-reminder')
 api.add_resource(TaskMonthlyReportAPI, '/task/monthly-report')
 api.add_resource(TaskPatientCSVAPI, '/task/export-patient-csv')
+
+from backend.analytics_api import (
+    AdminAnalyticsAPI,
+    DoctorAnalyticsAPI,
+    PatientAnalyticsAPI
+)
+
+# Analytics APIs
+api.add_resource(AdminAnalyticsAPI, '/admin/analytics')
+api.add_resource(DoctorAnalyticsAPI, '/doctor/analytics')
+api.add_resource(PatientAnalyticsAPI, '/patient/analytics')
+
 
 if __name__ == "__main__":
     init_db(app) 
