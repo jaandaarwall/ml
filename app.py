@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify
 from backend.celery_app import celery_init_app
-from backend.tasks import example_task, send_daily_reminders
+from backend.tasks import example_task, send_daily_reminders, sheduler_task
 from celery.schedules import crontab
 from backend.config import Config
 from backend.Sqldatabase import db
@@ -11,6 +11,14 @@ import time
 
 from flask_restful import Api
 from flask_cors import CORS
+
+from backend.task_apis import (
+    TaskExampleAPI,
+    TaskSendEmailAPI,
+    TaskDailyReminderAPI,
+    TaskMonthlyReportAPI,
+    TaskPatientCSVAPI
+)
 
 
 def create_app():
@@ -116,19 +124,32 @@ api.add_resource(PatientProfileAPI, '/patient/profile')
 # General APIs
 api.add_resource(DepartmentsAPI, '/departments')
 
-@app.route("/start-task", methods=["GET"])
-def start_task():
-    task = example_task.delay()
-    return jsonify({"task_id": task.id}), 202
+# @app.route("/start-task", methods=["GET"])
+# def start_task():
+#     task = example_task.delay()
+#     return jsonify({"task_id": task.id}), 202
 
-@celery.on_after_finalize.connect 
-def setup_periodic_tasks(sender, **kwargs):
-    # Send daily reminders at 8 AM every day
-    sender.add_periodic_task(
-        crontab(hour=8, minute=0),
-        send_daily_reminders.s(),
-        name='Daily appointment reminders'
-    )
+# @app.route("/email-check", methods=["GET"])
+# def email_check():
+#     task = sheduler_task.delay("1@example.com", "Test Subject", "Test Body")
+#     return jsonify({"task_id": task.id}), 202
+
+# @celery.on_after_finalize.connect 
+# def setup_periodic_tasks(sender, **kwargs):
+#     # Send daily reminders at 8 AM every day
+#     sender.add_periodic_task(
+#         crontab(),
+#         send_daily_reminders.s(),
+#         name='Daily appointment reminders'
+#     )
+
+
+# Task APIs
+api.add_resource(TaskExampleAPI, '/task/example')
+api.add_resource(TaskSendEmailAPI, '/task/send-email')
+api.add_resource(TaskDailyReminderAPI, '/task/daily-reminder')
+api.add_resource(TaskMonthlyReportAPI, '/task/monthly-report')
+api.add_resource(TaskPatientCSVAPI, '/task/export-patient-csv')
 
 if __name__ == "__main__":
     init_db(app) 

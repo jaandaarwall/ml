@@ -20,7 +20,7 @@
 #         "message":"sheduler task completed"
 #         }, 200    
 
-
+# backend/task.py
 import time
 from celery import shared_task
 from .mail import send_email
@@ -37,6 +37,13 @@ def example_task():
         "message":"task completed"
         }, 200
 
+@shared_task(ignore_results=False, name = "this is the example of sending email")
+def sheduler_task(to_email, subject, body):
+    send_email(to_email, subject, body)
+    print("sheduler task")
+    return {
+        "message":"sheduler task completed"
+        }, 200
 
 @shared_task(ignore_results=False, name = "Daily appointment reminders")
 def send_daily_reminders():
@@ -171,10 +178,3 @@ def export_patient_csv(patient_id):
     return {"message": "CSV export completed", "patient_id": patient_id}
 
 
-@shared_task(ignore_results=False, name = "this is the example of sending email")
-def sheduler_task(to_email, subject, body):
-    send_email(to_email, subject, body)
-    print("sheduler task")
-    return {
-        "message":"sheduler task completed"
-        }, 200

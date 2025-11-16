@@ -3,7 +3,7 @@
 import smtplib
 from email.mime.text import MIMEText
 
-SMTP_HOST = '192.168.31.164'
+SMTP_HOST = '192.168.31.163'
 SMTP_PORT = 1025
 FROM_EMAIL = 'abc@example.com'
 

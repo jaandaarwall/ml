@@ -6,7 +6,9 @@ class Config:
     # Flask-Security configuration
     SECURITY_PASSWORD_SALT = 'your_password_salt_here_change_in_production'
     SECURITY_TOKEN_AUTHENTICATION_HEADER = 'Authentication-Token'
-    SECURITY_PASSWORD_HASH = 'bcrypt'
+    # SECURITY_PASSWORD_HASH = 'bcrypt'
+    SECURITY_PASSWORD_HASH = 'pbkdf2_sha256'
+
     
     # Disable some Flask-Security features for API usage
     SECURITY_REGISTERABLE = True

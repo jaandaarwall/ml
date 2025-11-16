@@ -111,9 +111,15 @@ class RegisterAPI(Resource):
             }
             return make_response(jsonify(result), 400)
         
-        if user_datastore.find_user(email=email):
+        if user_datastore.find_user(username=username):
             result = {
                 'message': 'User already exists.'
+            }
+            return make_response(jsonify(result), 409)
+        
+        if user_datastore.find_user(email=email):
+            result = {
+                'message': 'Email already exists.'
             }
             return make_response(jsonify(result), 409)
         
