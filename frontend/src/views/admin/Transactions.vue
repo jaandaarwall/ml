@@ -2,7 +2,6 @@
   <div class="d-flex" style="height: 100vh;">
     <!-- Sidebar Navigation -->
     <div class="bg-primary text-white p-4" style="width: 250px; overflow-y: auto;">
-      
       <nav class="nav flex-column">
         <RouterLink to="/admin/dashboard" class="nav-link text-white mb-2">
           📊 Dashboard
@@ -10,13 +9,13 @@
         <RouterLink to="/admin/doctors" class="nav-link text-white mb-2">
           👨‍⚕️ Manage Doctors
         </RouterLink>
-        <RouterLink to="/admin/patients" class="nav-link text-white mb-2 active-nav">
+        <RouterLink to="/admin/patients" class="nav-link text-white mb-2">
           👥 Manage Patients
         </RouterLink>
         <RouterLink to="/admin/appointments" class="nav-link text-white mb-2">
           📅 All Appointments
         </RouterLink>
-        <RouterLink to="/admin/transactions" class="nav-link text-white mb-2">
+        <RouterLink to="/admin/transactions" class="nav-link text-white mb-2 active-nav">
           💰 Transactions
         </RouterLink>
         <RouterLink to="/admin/analytics" class="nav-link text-white mb-2">
@@ -29,21 +28,12 @@
     <div class="flex-grow-1 d-flex flex-column overflow-auto">
       <!-- Header -->
       <div class="bg-white border-bottom p-4">
-        <h1 class="mb-1">👥 Manage Patients</h1>
-        <p class="text-muted mb-0">View and manage all patients</p>
+        <h1 class="mb-1">💰 Transaction History</h1>
+        <p class="text-muted mb-0">View details of all payment transactions</p>
       </div>
 
       <!-- Content -->
       <div class="flex-grow-1 p-4 overflow-auto">
-        <div class="mb-3">
-          <input 
-            v-model="searchQuery" 
-            type="text" 
-            class="form-control" 
-            placeholder="Search patients by name or email..."
-          >
-        </div>
-
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
@@ -52,45 +42,42 @@
 
         <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
 
-        <div v-else-if="filteredPatients.length === 0" class="alert alert-info text-center">
-          No patients found
+        <div v-else-if="transactions.length === 0" class="alert alert-info text-center">
+          No transactions found
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover">
             <thead class="table-light">
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Blood Group</th>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Amount</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th>Appt ID</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="patient in filteredPatients" :key="patient.id">
-                <td class="fw-bold">{{ patient.name }}</td>
-                <td>{{ patient.email }}</td>
-                <td>{{ patient.phone }}</td>
+              <tr v-for="txn in transactions" :key="txn.id">
+                <td><span class="badge bg-light text-dark">#{{ txn.id }}</span></td>
+                <td>{{ txn.date }}</td>
+                <td class="fw-bold">{{ txn.patient }}</td>
+                <td>Dr. {{ txn.doctor }}</td>
+                <td class="text-success fw-bold">₹{{ txn.amount }}</td>
                 <td>
-                  <span v-if="patient.blood_group" class="badge bg-warning text-dark">
-                    {{ patient.blood_group }}
+                  <span v-if="txn.status === 'Success'" class="badge bg-success">
+                    {{ txn.status }}
                   </span>
-                  <span v-else class="text-muted">N/A</span>
+                  <span v-else-if="txn.status === 'Pending'" class="badge bg-warning text-dark">
+                    {{ txn.status }}
+                  </span>
+                  <span v-else class="badge bg-danger">
+                    {{ txn.status }}
+                  </span>
                 </td>
-                <td>
-                  <span v-if="patient.is_active" class="badge bg-success">Active</span>
-                  <span v-else class="badge bg-danger">Inactive</span>
-                </td>
-                <td>
-                  <RouterLink :to="`/admin/patient/${patient.id}`" class="btn btn-sm btn-info me-1">
-                    👁️
-                  </RouterLink>
-                  <button @click="togglePatient(patient)" class="btn btn-sm" :class="patient.is_active ? 'btn-warning' : 'btn-success'">
-                    {{ patient.is_active ? '❌' : '✅' }}
-                  </button>
-                </td>
+                <td>#{{ txn.appointment_id }}</td>
               </tr>
             </tbody>
           </table>
@@ -101,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { adminAPI } from '../../services/api'
@@ -111,35 +98,16 @@ const authStore = useAuthStore()
 
 const loading = ref(true)
 const error = ref('')
-const searchQuery = ref('')
-const patients = ref([])
+const transactions = ref([])
 
-const filteredPatients = computed(() => {
-  if (!searchQuery.value) return patients.value
-  const query = searchQuery.value.toLowerCase()
-  return patients.value.filter(p => 
-    p.name.toLowerCase().includes(query) ||
-    p.email.toLowerCase().includes(query)
-  )
-})
-
-const fetchPatients = async () => {
+const fetchTransactions = async () => {
   try {
-    const response = await adminAPI.getPatients()
-    patients.value = response
+    const response = await adminAPI.getTransactions()
+    transactions.value = response
     loading.value = false
   } catch (err) {
     error.value = err.message
     loading.value = false
-  }
-}
-
-const togglePatient = async (patient) => {
-  try {
-    await adminAPI.deactivatePatient(patient.id)
-    patient.is_active = !patient.is_active
-  } catch (err) {
-    error.value = err.message
   }
 }
 
@@ -152,7 +120,7 @@ const handleLogout = async () => {
   }
 }
 
-onMounted(fetchPatients)
+onMounted(fetchTransactions)
 </script>
 
 <style scoped>

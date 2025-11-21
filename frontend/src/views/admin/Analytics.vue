@@ -15,6 +15,9 @@
         <RouterLink to="/admin/appointments" class="nav-link text-white mb-2">
           📅 All Appointments
         </RouterLink>
+        <RouterLink to="/admin/transactions" class="nav-link text-white mb-2">
+          💰 Transactions
+        </RouterLink>
         <RouterLink to="/admin/analytics" class="nav-link text-white mb-2 active-nav">
           📈 Reports
         </RouterLink>

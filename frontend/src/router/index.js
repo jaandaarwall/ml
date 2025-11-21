@@ -14,6 +14,7 @@ import AdminPatients from '../views/admin/Patients.vue'
 import AdminPatientDetail from '../views/admin/PatientDetail.vue'
 import AdminAppointments from '../views/admin/Appointments.vue'
 import AdminAnalytics from '../views/admin/Analytics.vue'
+import AdminTransactions from '../views/admin/Transactions.vue'
 
 // Doctor Views
 import DoctorDashboard from '../views/doctor/Dashboard.vue'
@@ -48,7 +49,8 @@ const routes = [
       { path: 'patients', name: 'AdminPatients', component: AdminPatients },
       { path: 'patient/:id', name: 'AdminPatientDetail', component: AdminPatientDetail },
       { path: 'appointments', name: 'AdminAppointments', component: AdminAppointments },
-      { path: 'analytics', name: 'AdminAnalytics', component: AdminAnalytics }
+      { path: 'analytics', name: 'AdminAnalytics', component: AdminAnalytics },
+      { path: 'transactions', name: 'AdminTransactions', component: AdminTransactions }
     ]
   },
 

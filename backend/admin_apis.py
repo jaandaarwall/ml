@@ -254,3 +254,21 @@ class DepartmentsAPI(Resource):
                 'description': dept.description
             })
         return make_response(jsonify(dept_list), 200)
+
+class AdminTransactionsAPI(Resource):
+    @auth_token_required
+    @roles_required('admin')
+    def get(self):
+        payments = Payment.query.order_by(Payment.created_at.desc()).all()
+        transactions = []
+        for pay in payments:
+            transactions.append({
+                'id': pay.id,
+                'appointment_id': pay.appointment_id,
+                'patient': pay.appointment.patient.user.username if pay.appointment and pay.appointment.patient else 'Unknown',
+                'doctor': pay.appointment.doctor.user.username if pay.appointment and pay.appointment.doctor else 'Unknown',
+                'amount': pay.amount,
+                'status': pay.status,
+                'date': pay.created_at.strftime('%Y-%m-%d %H:%M')
+            })
+        return make_response(jsonify(transactions), 200)

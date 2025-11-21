@@ -24,6 +24,7 @@
               <li><RouterLink to="/admin/doctors" class="dropdown-item">Doctors</RouterLink></li>
               <li><RouterLink to="/admin/patients" class="dropdown-item">Patients</RouterLink></li>
               <li><RouterLink to="/admin/appointments" class="dropdown-item">Appointments</RouterLink></li>
+              <li><RouterLink to="/admin/transactions" class="dropdown-item">Transactions</RouterLink></li>
               <li><RouterLink to="/admin/analytics" class="dropdown-item">Analytics</RouterLink></li>
             </ul>
           </li>

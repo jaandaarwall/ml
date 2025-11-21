@@ -84,7 +84,9 @@ export const adminAPI = {
   search: (query, type = 'all') => 
     apiCall(`/admin/search?q=${query}&type=${type}`),
 
-  getAnalytics: () => apiCall('/admin/analytics')
+  getAnalytics: () => apiCall('/admin/analytics'),
+
+  getTransactions: () => apiCall('/admin/transactions')
 }
 
 export const doctorAPI = {
