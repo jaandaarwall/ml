@@ -1,62 +1,65 @@
-import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { authAPI } from '../services/api'
 
-export const useAuthStore = defineStore('authStore', () => {
-  const auth_token = ref(localStorage.getItem('token') || null)
-  const user = ref(JSON.parse(localStorage.getItem('user')) || null)
-  
-  const isAuthenticated = computed(() => auth_token.value !== null)
-  const userRoles = computed(() => user.value?.roles || [])
-  const isAdmin = computed(() => userRoles.value.includes('admin'))
-  const isDoctor = computed(() => userRoles.value.includes('doctor'))
-  const isPatient = computed(() => userRoles.value.includes('user'))
-  
-  function setUserCred(token, userData) {
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(userData))
-    auth_token.value = token
-    user.value = userData
-  }
-  
-  function clearAuthToken() {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    auth_token.value = null
-    user.value = null
-  }
-  
-  function getAuthToken() {
-    return auth_token.value
-  }
-  
-  function getUserEmail() {
-    return user.value ? user.value.email : null
-  }
-  
-  function getUserRoles() {
-    return user.value ? user.value.roles : []
-  }
-  
-  function getAuthHeader() {
-    return {
-      'Authorization': `Bearer ${auth_token.value}`,
-      'Content-Type': 'application/json'
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref(null)
+  const authToken = ref(localStorage.getItem('authToken'))
+  const isAuthenticated = computed(() => !!authToken.value)
+
+  const login = async (email, password) => {
+    const response = await authAPI.login(email, password)
+    authToken.value = response.user_details.auth_token
+    user.value = {
+      email: response.user_details.email,
+      roles: response.user_details.roles
     }
+    localStorage.setItem('authToken', authToken.value)
+    localStorage.setItem('user', JSON.stringify(user.value))
+    return response
   }
-  
+
+  const register = async (username, email, password) => {
+    const response = await authAPI.register(username, email, password)
+    return response
+  }
+
+  const logout = async () => {
+    await authAPI.logout()
+    user.value = null
+    authToken.value = null
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('user')
+  }
+
+  const hasRole = (role) => {
+    return user.value?.roles?.includes(role) || false
+  }
+
+  const isAdmin = computed(() => hasRole('admin'))
+  const isDoctor = computed(() => hasRole('doctor'))
+  const isPatient = computed(() => hasRole('user'))
+
+  const checkEmail = async (email) => {
+    return await authAPI.checkEmail(email)
+  }
+
+  // Initialize from localStorage
+  if (localStorage.getItem('user')) {
+    user.value = JSON.parse(localStorage.getItem('user'))
+  }
+
   return {
-    // Computed properties
+    user,
+    authToken,
     isAuthenticated,
-    userRoles,
+    login,
+    register,
+    logout,
+    hasRole,
     isAdmin,
     isDoctor,
     isPatient,
-    // Functions
-    getAuthToken,
-    getUserEmail,
-    getUserRoles,
-    getAuthHeader,
-    setUserCred,
-    clearAuthToken
+    checkEmail
   }
 })

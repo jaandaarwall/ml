@@ -17,7 +17,6 @@ from flask_cors import CORS
 from backend.task_apis import (
     TaskExampleAPI,
     TaskSendEmailAPI,
-    TaskDailyReminderAPI,
     TaskMonthlyReportAPI,
     TaskPatientCSVAPI
 )
@@ -128,15 +127,6 @@ api.add_resource(DepartmentsAPI, '/departments')
 api.add_resource(DummyPaymentAPI, '/payment/<int:payment_id>/pay')
 
 
-# @app.route("/start-task", methods=["GET"])
-# def start_task():
-#     task = example_task.delay()F
-#     return jsonify({"task_id": task.id}), 202
-
-# @app.route("/email-check", methods=["GET"])
-# def email_check():
-#     task = sheduler_task.delay("1@example.com", "Test Subject", "Test Body")
-#     return jsonify({"task_id": task.id}), 202
 
 @celery.on_after_finalize.connect 
 def setup_periodic_tasks(sender, **kwargs):
@@ -151,7 +141,6 @@ def setup_periodic_tasks(sender, **kwargs):
 # Task APIs
 api.add_resource(TaskExampleAPI, '/task/example')
 api.add_resource(TaskSendEmailAPI, '/task/send-email')
-# api.add_resource(TaskDailyReminderAPI, '/task/daily-reminder')
 api.add_resource(TaskMonthlyReportAPI, '/task/monthly-report')
 api.add_resource(TaskPatientCSVAPI, '/task/export-patient-csv')
 
