@@ -43,6 +43,20 @@
         <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
 
         <div v-else class="row g-4">
+          <!-- Revenue Chart (Full Width) -->
+          <div class="col-12">
+            <div class="card h-100">
+              <div class="card-header bg-light text-success">
+                <h5 class="mb-0">💰 Monthly Revenue</h5>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas ref="chartRevenue"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Appointments Chart -->
           <div class="col-lg-6">
             <div class="card h-100">
@@ -105,6 +119,7 @@ const error = ref('')
 const chartMonth = ref(null)
 const chartDept = ref(null)
 const chartStatus = ref(null)
+const chartRevenue = ref(null)
 
 const fetchAnalytics = async () => {
   try {
@@ -112,6 +127,35 @@ const fetchAnalytics = async () => {
 
     loading.value = false
     await nextTick()
+
+    // Revenue Chart
+    if (chartRevenue.value) {
+      new Chart(chartRevenue.value.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: data.revenue_per_month.labels,
+          datasets: [{
+            label: 'Revenue (₹)',
+            data: data.revenue_per_month.values,
+            backgroundColor: 'rgba(40, 167, 69, 0.6)',
+            borderColor: '#28a745',
+            borderWidth: 1
+          }]
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: (value) => '₹' + value
+              }
+            }
+          }
+        }
+      })
+    }
 
     if (chartMonth.value) {
       new Chart(chartMonth.value.getContext('2d'), {
@@ -153,7 +197,7 @@ const fetchAnalytics = async () => {
           labels: data.appointment_status_summary.labels,
           datasets: [{
             data: data.appointment_status_summary.values,
-            backgroundColor: ['#0d6efd', '#198754', '#dc3545']
+            backgroundColor: ['#0d6efd', '#198754', '#dc3545', '#ffc107']
           }]
         },
         options: { responsive: true, maintainAspectRatio: false }
@@ -201,6 +245,6 @@ onMounted(fetchAnalytics)
 .chart-container {
   position: relative;
   height: 350px;
-  width: 60%;
+  width: 100%;
 }
 </style>

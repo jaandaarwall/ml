@@ -40,9 +40,16 @@
     <!-- Main Content -->
     <div class="flex-grow-1">
       <!-- Header -->
-      <div class="bg-white border-bottom p-4 mb-4">
-        <h1 class="mb-1">⏰ My Medical History</h1>
-        <p class="text-muted mb-0">A complete record of your past consultations and treatments.</p>
+      <div class="bg-white border-bottom p-4 mb-4 d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="mb-1">⏰ My Medical History</h1>
+          <p class="text-muted mb-0">A complete record of your past consultations and treatments.</p>
+        </div>
+        <button class="btn btn-primary" @click="showExportModal = true" :disabled="exporting">
+          <span v-if="exporting" class="spinner-border spinner-border-sm me-2"></span>
+          <span v-if="exporting">Generating...</span>
+          <span v-else>📥 Export as CSV</span>
+        </button>
       </div>
 
       <!-- Content -->
@@ -102,6 +109,33 @@
         </div>
       </div>
     </div>
+
+    <!-- Export Modal -->
+    <div v-if="showExportModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Export Medical History</h5>
+            <button type="button" class="btn-close" @click="showExportModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Start Date (Optional)</label>
+              <input v-model="exportDates.start" type="date" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">End Date (Optional)</label>
+              <input v-model="exportDates.end" type="date" class="form-control">
+            </div>
+            <p class="text-muted small">Leave dates blank to export all history.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showExportModal = false">Cancel</button>
+            <button type="button" class="btn btn-primary" @click="handleExport">Generate & Download</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -115,8 +149,11 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const loading = ref(true)
+const exporting = ref(false)
 const error = ref('')
 const history = ref([])
+const showExportModal = ref(false)
+const exportDates = ref({ start: '', end: '' })
 
 const fetchHistory = async () => {
   try {
@@ -129,12 +166,48 @@ const fetchHistory = async () => {
   }
 }
 
-const handleLogout = async () => {
+const handleExport = async () => {
+  exporting.value = true
+  showExportModal.value = false
   try {
-    await authStore.logout()
-    router.push('/login')
-  } catch (error) {
-    console.error('Logout error:', error)
+    // 1. Start the task
+    const res = await patientAPI.exportHistory(exportDates.value.start, exportDates.value.end)
+    const taskId = res.task_id
+    
+    // 2. Poll for status
+    const interval = setInterval(async () => {
+      try {
+        const statusRes = await patientAPI.getTaskStatus(taskId)
+        if (statusRes.state === 'SUCCESS') {
+          clearInterval(interval)
+          exporting.value = false
+          
+          // 3. Download
+          const blob = new Blob([statusRes.result.csv_data], { type: 'text/csv' })
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = statusRes.result.filename
+          document.body.appendChild(a)
+          a.click()
+          window.URL.revokeObjectURL(url)
+          document.body.removeChild(a)
+          
+        } else if (statusRes.state === 'FAILURE') {
+          clearInterval(interval)
+          exporting.value = false
+          alert('Export failed: ' + statusRes.status)
+        }
+      } catch (err) {
+        clearInterval(interval)
+        exporting.value = false
+        alert('Error checking export status')
+      }
+    }, 1000) // Check every 1 second
+
+  } catch (err) {
+    exporting.value = false
+    alert(err.message || 'Export failed')
   }
 }
 

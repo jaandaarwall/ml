@@ -1,7 +1,7 @@
 <!-- views/doctor/Appointments.vue -->
 <template>
   <div class="d-flex" style="min-height: 100vh; background-color: #f8f9fa;">
-    <!-- Sidebar (same as dashboard) -->
+    <!-- Sidebar -->
     <nav class="bg-primary text-white p-4" style="width: 240px; min-height: 100vh; overflow-y: auto;">
       <div class="nav flex-column gap-2">
         <RouterLink to="/doctor/dashboard" class="nav-link text-white">
@@ -27,9 +27,16 @@
 
     <!-- Main Content -->
     <div class="flex-grow-1">
-      <div class="bg-white border-bottom p-4 mb-4">
-        <h2 class="mb-1">📅 My Appointments</h2>
-        <p class="text-muted mb-0">View and manage all your appointments.</p>
+      <div class="bg-white border-bottom p-4 mb-4 d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-1">📅 My Appointments</h2>
+          <p class="text-muted mb-0">View and manage all your appointments.</p>
+        </div>
+        <button class="btn btn-primary" @click="showExportModal = true" :disabled="exporting">
+          <span v-if="exporting" class="spinner-border spinner-border-sm me-2"></span>
+          <span v-if="exporting">Generating...</span>
+          <span v-else>📥 Export CSV</span>
+        </button>
       </div>
 
       <div class="container-fluid px-4">
@@ -82,6 +89,32 @@
         </div>
       </div>
     </div>
+
+    <!-- Export Modal -->
+    <div v-if="showExportModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Export My Appointments</h5>
+            <button type="button" class="btn-close" @click="showExportModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Start Date</label>
+              <input v-model="exportDates.start" type="date" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">End Date</label>
+              <input v-model="exportDates.end" type="date" class="form-control">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showExportModal = false">Cancel</button>
+            <button type="button" class="btn btn-primary" @click="handleExport">Generate & Download</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -94,7 +127,10 @@ import { doctorAPI } from '../../services/api'
 const router = useRouter()
 const authStore = useAuthStore()
 const loading = ref(true)
+const exporting = ref(false)
 const appointments = ref([])
+const showExportModal = ref(false)
+const exportDates = ref({ start: '', end: '' })
 
 const getStatusClass = (status) => {
   const classes = {
@@ -105,12 +141,45 @@ const getStatusClass = (status) => {
   return classes[status] || 'bg-secondary'
 }
 
-const handleLogout = async () => {
+const handleExport = async () => {
+  exporting.value = true
+  showExportModal.value = false
   try {
-    await authStore.logout()
-    router.push('/login')
-  } catch (error) {
-    console.error('Logout error:', error)
+    const res = await doctorAPI.exportAppointments(exportDates.value.start, exportDates.value.end)
+    const taskId = res.task_id
+    
+    const interval = setInterval(async () => {
+      try {
+        const statusRes = await doctorAPI.getTaskStatus(taskId)
+        if (statusRes.state === 'SUCCESS') {
+          clearInterval(interval)
+          exporting.value = false
+          
+          const blob = new Blob([statusRes.result.csv_data], { type: 'text/csv' })
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = statusRes.result.filename
+          document.body.appendChild(a)
+          a.click()
+          window.URL.revokeObjectURL(url)
+          document.body.removeChild(a)
+          
+        } else if (statusRes.state === 'FAILURE') {
+          clearInterval(interval)
+          exporting.value = false
+          alert('Export failed: ' + statusRes.status)
+        }
+      } catch (err) {
+        clearInterval(interval)
+        exporting.value = false
+        alert('Error checking export status')
+      }
+    }, 1000) 
+
+  } catch (err) {
+    exporting.value = false
+    alert(err.message || 'Export failed')
   }
 }
 

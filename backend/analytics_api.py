@@ -5,7 +5,7 @@ from sqlalchemy import func
 from datetime import datetime, timedelta
 
 from .Sqldatabase import db
-from .models import Appointment, Doctor, Patient, Department
+from .models import Appointment, Doctor, Patient, Department, Payment
 
 
 # ---------------------------------------
@@ -23,6 +23,15 @@ class AdminAnalyticsAPI(Resource):
 
         month_labels = [row[0] for row in monthly_data]
         month_values = [row[1] for row in monthly_data]
+
+        # Revenue Per Month (Successful Payments)
+        revenue_data = db.session.query(
+            func.strftime('%Y-%m', Payment.created_at),
+            func.sum(Payment.amount)
+        ).filter(Payment.status == 'Success').group_by(func.strftime('%Y-%m', Payment.created_at)).all()
+
+        revenue_labels = [row[0] for row in revenue_data]
+        revenue_values = [row[1] for row in revenue_data]
 
         # Doctors Per Department
         dept_stats = db.session.query(
@@ -46,6 +55,10 @@ class AdminAnalyticsAPI(Resource):
             "appointments_per_month": {
                 "labels": month_labels,
                 "values": month_values
+            },
+            "revenue_per_month": {
+                "labels": revenue_labels,
+                "values": revenue_values
             },
             "doctors_per_department": {
                 "labels": dept_labels,

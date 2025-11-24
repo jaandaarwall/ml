@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify
 from backend.celery_app import celery_init_app
-from backend.tasks import example_task, send_daily_reminders, sheduler_task
+from backend.tasks import example_task, send_daily_reminders, sheduler_task, send_monthly_reports
 from celery.schedules import crontab
 from backend.config import Config
 from backend.Sqldatabase import db
@@ -18,7 +18,11 @@ from backend.task_apis import (
     TaskExampleAPI,
     TaskSendEmailAPI,
     TaskMonthlyReportAPI,
-    TaskPatientCSVAPI
+    TaskPatientCSVAPI,
+    TaskAdminAppointmentsCSVAPI,
+    TaskAdminTransactionsCSVAPI,
+    TaskDoctorAppointmentsCSVAPI,
+    TaskStatusAPI
 )
 
 
@@ -134,8 +138,17 @@ def setup_periodic_tasks(sender, **kwargs):
     # Send daily reminders at 8 AM every day
     sender.add_periodic_task(
         crontab(),
+        # crontab(minute=0, hour=8),
         send_daily_reminders.s(),
         name='Daily appointment reminders'
+    )
+    
+    # Send monthly reports on the 1st of every month at 6 AM
+    sender.add_periodic_task(
+        crontab(),
+        # crontab(minute=0, hour=6, day_of_month=1),
+        send_monthly_reports.s(),
+        name='Monthly doctor activity reports'
     )
 
 
@@ -144,6 +157,10 @@ api.add_resource(TaskExampleAPI, '/task/example')
 api.add_resource(TaskSendEmailAPI, '/task/send-email')
 api.add_resource(TaskMonthlyReportAPI, '/task/monthly-report')
 api.add_resource(TaskPatientCSVAPI, '/task/export-patient-csv')
+api.add_resource(TaskAdminAppointmentsCSVAPI, '/task/export-admin-appointments')
+api.add_resource(TaskAdminTransactionsCSVAPI, '/task/export-admin-transactions')
+api.add_resource(TaskDoctorAppointmentsCSVAPI, '/task/export-doctor-appointments')
+api.add_resource(TaskStatusAPI, '/task/status/<string:task_id>')
 
 from backend.analytics_api import (
     AdminAnalyticsAPI,

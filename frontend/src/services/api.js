@@ -86,7 +86,23 @@ export const adminAPI = {
 
   getAnalytics: () => apiCall('/admin/analytics'),
 
-  getTransactions: () => apiCall('/admin/transactions')
+  getTransactions: () => apiCall('/admin/transactions'),
+
+  // Export Tasks
+  exportAppointments: (startDate, endDate) => 
+    apiCall('/task/export-admin-appointments', {
+      method: 'POST',
+      body: JSON.stringify({ start_date: startDate, end_date: endDate })
+    }),
+  
+  exportTransactions: (startDate, endDate) => 
+    apiCall('/task/export-admin-transactions', {
+      method: 'POST',
+      body: JSON.stringify({ start_date: startDate, end_date: endDate })
+    }),
+    
+  getTaskStatus: (taskId) => 
+    apiCall(`/task/status/${taskId}`)
 }
 
 export const doctorAPI = {
@@ -130,7 +146,17 @@ export const doctorAPI = {
       body: JSON.stringify(data)
     }),
 
-  getAnalytics: () => apiCall('/doctor/analytics')
+  getAnalytics: () => apiCall('/doctor/analytics'),
+
+  // Export Task
+  exportAppointments: (startDate, endDate) => 
+    apiCall('/task/export-doctor-appointments', {
+      method: 'POST',
+      body: JSON.stringify({ start_date: startDate, end_date: endDate })
+    }),
+    
+  getTaskStatus: (taskId) => 
+    apiCall(`/task/status/${taskId}`)
 }
 
 export const patientAPI = {
@@ -166,7 +192,17 @@ export const patientAPI = {
       body: JSON.stringify(data)
     }),
 
-  getAnalytics: () => apiCall('/patient/analytics')
+  getAnalytics: () => apiCall('/patient/analytics'),
+
+  // Export Task
+  exportHistory: (startDate, endDate) => 
+    apiCall('/task/export-patient-csv', {
+      method: 'POST',
+      body: JSON.stringify({ start_date: startDate, end_date: endDate })
+    }),
+    
+  getTaskStatus: (taskId) => 
+    apiCall(`/task/status/${taskId}`)
 }
 
 export const departmentsAPI = {
