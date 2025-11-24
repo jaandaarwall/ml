@@ -9,6 +9,8 @@ from backend.user_datastore import user_datastore
 from flask_security import Security, utils
 import time
 from backend.payment_apis import DummyPaymentAPI
+# Import the cache instance
+from backend.cache import cache
 
 
 from flask_restful import Api
@@ -31,6 +33,9 @@ def create_app():
     app.config.from_object(Config)
 
     db.init_app(app)
+    # Initialize Cache
+    cache.init_app(app)
+    
     security = Security(app, user_datastore)
 
     api = Api(app, prefix='/api')

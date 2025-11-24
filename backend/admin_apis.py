@@ -5,10 +5,13 @@ from .Sqldatabase import db
 from .models import *
 from .user_datastore import user_datastore
 from datetime import datetime
+from .cache import cache
 
 class AdminDashboardAPI(Resource):
     @auth_token_required
     @roles_required('admin')
+    # Cache dashboard stats for 5 mins. Key is constant.
+    @cache.cached(timeout=300, key_prefix='admin_dashboard_stats')
     def get(self):
         total_doctors = Doctor.query.filter_by(is_active=True).count()
         total_patients = Patient.query.count()
@@ -25,6 +28,8 @@ class AdminDashboardAPI(Resource):
 class AdminDoctorsAPI(Resource):
     @auth_token_required
     @roles_required('admin')
+    # Cache full doctor list for 5 mins
+    @cache.cached(timeout=300, key_prefix='admin_all_doctors')
     def get(self):
         doctors = Doctor.query.all()
         doctors_list = []
@@ -79,6 +84,10 @@ class AdminAddDoctorAPI(Resource):
         db.session.add(doctor)
         db.session.commit()
         
+        # Refresh Policy: Invalidate admin stats and lists when a doctor is added
+        cache.delete('admin_dashboard_stats')
+        cache.delete('admin_all_doctors')
+        
         return make_response(jsonify({'message': 'Doctor added successfully'}), 201)
 
 class AdminDoctorDetailAPI(Resource):
@@ -115,6 +124,10 @@ class AdminDoctorDetailAPI(Resource):
         doctor.experience_years = data.get('experience_years', doctor.experience_years)
         
         db.session.commit()
+        
+        # Refresh Policy: Invalidate doctor list on update
+        cache.delete('admin_all_doctors')
+        
         return make_response(jsonify({'message': 'Doctor updated successfully'}), 200)
     
     @auth_token_required
@@ -124,6 +137,10 @@ class AdminDoctorDetailAPI(Resource):
         doctor.is_active = not doctor.is_active
         doctor.user.active = doctor.is_active
         db.session.commit()
+        
+        # Refresh Policy: Invalidate stats and lists on status change
+        cache.delete('admin_dashboard_stats')
+        cache.delete('admin_all_doctors')
         
         status = 'activated' if doctor.is_active else 'deactivated'
         return make_response(jsonify({'message': f'Doctor {status} successfully'}), 200)
@@ -182,6 +199,9 @@ class AdminPatientDetailAPI(Resource):
         patient.user.active = not patient.user.active
         db.session.commit()
         
+        # Refresh Policy: Invalidate stats
+        cache.delete('admin_dashboard_stats')
+        
         status = 'activated' if patient.user.active else 'deactivated'
         return make_response(jsonify({'message': f'Patient {status} successfully'}), 200)
 
@@ -206,6 +226,8 @@ class AdminAppointmentsAPI(Resource):
 class AdminSearchAPI(Resource):
     @auth_token_required
     @roles_required('admin')
+    # Cache search results for 2 minutes. 'query_string=True' caches based on ?q=...&type=...
+    @cache.cached(timeout=120, query_string=True)
     def get(self):
         query = request.args.get('q', '')
         search_type = request.args.get('type', 'all')
@@ -244,6 +266,8 @@ class AdminSearchAPI(Resource):
         return make_response(jsonify(results), 200)
 
 class DepartmentsAPI(Resource):
+    # Cache static departments list for 1 hour
+    @cache.cached(timeout=3600)
     def get(self):
         departments = Department.query.all()
         dept_list = []

@@ -5,10 +5,13 @@ from .Sqldatabase import db
 from .models import *
 from .tasks import export_patient_csv
 from datetime import datetime, timedelta
+from .cache import cache
 
 class PatientDashboardAPI(Resource):
     @auth_token_required
     @roles_required('user')
+    # Short cache for dashboard, invalidated by time (30s) as appointments change
+    @cache.cached(timeout=30, key_prefix=lambda: f'patient_dashboard_{current_user.id}')
     def get(self):
         patient = Patient.query.filter_by(user_id=current_user.id).first()
         
@@ -56,6 +59,8 @@ class PatientDashboardAPI(Resource):
 class PatientDoctorsAPI(Resource):
     @auth_token_required
     @roles_required('user')
+    # Cache for 5 minutes. Uses query string (department_id) to create distinct keys.
+    @cache.cached(timeout=300, query_string=True)
     def get(self):
         department_id = request.args.get('department_id')
         
@@ -83,6 +88,8 @@ class PatientDoctorsAPI(Resource):
 class PatientDoctorAvailabilityAPI(Resource):
     @auth_token_required
     @roles_required('user')
+    # Cache for 60s. Doctor availability is high-traffic but dynamic.
+    @cache.cached(timeout=60, query_string=True)
     def get(self, doctor_id):
         date_str = request.args.get('date')
         date = datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -190,8 +197,10 @@ class PatientBookAppointmentAPI(Resource):
         db.session.commit()
 
         payment_link = f"http://localhost:5173/payment/{payment.id}"
+        
+        # Explicitly invalidate dashboard cache for this user
+        cache.delete(f'patient_dashboard_{current_user.id}')
 
-        # return make_response(jsonify({'message': 'Appointment booked successfully'}), 201)
         return make_response(jsonify({
             "message": "Appointment booked successfully",
             "appointment_id": appointment.id,
@@ -244,6 +253,9 @@ class PatientCancelAppointmentAPI(Resource):
         
         appointment.status = 'Cancelled'
         db.session.commit()
+        
+        # Invalidate dashboard cache on cancellation
+        cache.delete(f'patient_dashboard_{current_user.id}')
         
         return make_response(jsonify({'message': 'Appointment cancelled successfully'}), 200)
 

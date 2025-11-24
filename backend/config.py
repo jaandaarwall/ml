@@ -19,4 +19,15 @@ class Config:
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    
+
+    # -------------------------
+    # Redis Cache Configuration
+    # -------------------------
+    # Use RedisCache backend
+    CACHE_TYPE = 'RedisCache'
+    # Connect to local Redis on standard port, using DB 2 (0 and 1 often used by Celery)
+    CACHE_REDIS_URL = 'redis://localhost:6379/2'
+    # Default timeout in seconds (5 minutes)
+    CACHE_DEFAULT_TIMEOUT = 300
+    # Prefix for all keys to avoid collisions
+    CACHE_KEY_PREFIX = 'hms_api_'
