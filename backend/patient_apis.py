@@ -311,6 +311,7 @@ class PatientProfileAPI(Resource):
     @auth_token_required
     @roles_required('user')
     def put(self):
+        from flask_security import utils
         data = request.get_json()
         
         current_user.username = data.get('username', current_user.username)
@@ -321,6 +322,9 @@ class PatientProfileAPI(Resource):
         
         if data.get('date_of_birth'):
             current_user.date_of_birth = datetime.strptime(data['date_of_birth'], '%Y-%m-%d').date()
+            
+        if data.get('password'):
+            current_user.password = utils.hash_password(data['password'])
         
         db.session.commit()
         

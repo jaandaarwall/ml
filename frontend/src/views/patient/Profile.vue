@@ -115,6 +115,19 @@
                     <textarea v-model="profile.address" class="form-control" rows="3"></textarea>
                   </div>
 
+                  <hr class="my-4">
+                  <h5 class="mb-3">Change Password</h5>
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">New Password</label>
+                      <input v-model="passwords.new" type="password" class="form-control" placeholder="Leave blank to keep current">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">Confirm Password</label>
+                      <input v-model="passwords.confirm" type="password" class="form-control">
+                    </div>
+                  </div>
+
                   <button type="submit" class="btn btn-primary w-100" :disabled="updating">
                     {{ updating ? 'Updating...' : '💾 Save Changes' }}
                   </button>
@@ -151,6 +164,7 @@ const profile = ref({
   blood_group: '',
   address: ''
 })
+const passwords = ref({ new: '', confirm: '' })
 
 const fetchProfile = async () => {
   try {
@@ -168,9 +182,25 @@ const updateProfile = async () => {
   successMessage.value = ''
   errorMessage.value = ''
 
+  const payload = { ...profile.value }
+  if (passwords.value.new) {
+    if (passwords.value.new !== passwords.value.confirm) {
+      errorMessage.value = 'Passwords do not match'
+      updating.value = false
+      return
+    }
+    if (passwords.value.new.length < 6) {
+        errorMessage.value = 'Password must be at least 6 characters'
+        updating.value = false
+        return
+    }
+    payload.password = passwords.value.new
+  }
+
   try {
-    await patientAPI.updateProfile(profile.value)
+    await patientAPI.updateProfile(payload)
     successMessage.value = 'Profile updated successfully!'
+    passwords.value = { new: '', confirm: '' }
     setTimeout(() => {
       successMessage.value = ''
     }, 3000)

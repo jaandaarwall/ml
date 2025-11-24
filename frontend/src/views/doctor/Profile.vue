@@ -70,6 +70,19 @@
                     <input v-model.number="profile.experience_years" type="number" class="form-control">
                   </div>
 
+                  <hr class="my-4">
+                  <h5 class="mb-3">Change Password</h5>
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label">New Password</label>
+                      <input v-model="passwords.new" type="password" class="form-control" placeholder="Leave blank to keep current">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Confirm Password</label>
+                      <input v-model="passwords.confirm" type="password" class="form-control">
+                    </div>
+                  </div>
+
                   <button type="submit" class="btn btn-primary">
                     💾 Save Changes
                   </button>
@@ -100,11 +113,27 @@ const profile = ref({
   qualification: '',
   experience_years: 0
 })
+const passwords = ref({ new: '', confirm: '' })
 
 const updateProfile = async () => {
+  const payload = { ...profile.value }
+  
+  if (passwords.value.new) {
+    if (passwords.value.new !== passwords.value.confirm) {
+      alert('Passwords do not match')
+      return
+    }
+    if (passwords.value.new.length < 6) {
+        alert('Password must be at least 6 characters')
+        return
+    }
+    payload.password = passwords.value.new
+  }
+
   try {
-    await doctorAPI.updateProfile(profile.value)
+    await doctorAPI.updateProfile(payload)
     alert('Profile updated successfully')
+    passwords.value = { new: '', confirm: '' }
   } catch (err) {
     alert(err.message)
   }
@@ -140,4 +169,4 @@ onMounted(async () => {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
-</style>
+</style> 

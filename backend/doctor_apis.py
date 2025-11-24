@@ -279,6 +279,7 @@ class DoctorProfileAPI(Resource):
     @auth_token_required
     @roles_required('doctor')
     def put(self):
+        from flask_security import utils
         doctor = Doctor.query.filter_by(user_id=current_user.id).first_or_404()
         data = request.get_json()
         
@@ -286,6 +287,9 @@ class DoctorProfileAPI(Resource):
         doctor.user.phone = data.get('phone', doctor.user.phone)
         doctor.qualification = data.get('qualification', doctor.qualification)
         doctor.experience_years = data.get('experience_years', doctor.experience_years)
+        
+        if data.get('password'):
+            doctor.user.password = utils.hash_password(data['password'])
         
         db.session.commit()
         
