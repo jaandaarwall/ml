@@ -27,39 +27,93 @@
           <div class="card-header">Appointments</div>
           <div class="card-body">
             <div v-if="appointments.length === 0" class="text-muted">No appointments</div>
-            <table v-else class="table table-sm">
-              <thead>
-                <tr>
-                  <th>Doctor</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="apt in appointments" :key="apt.id">
-                  <td>{{ apt.doctor_name }}</td>
-                  <td>{{ apt.date }}</td>
-                  <td>{{ apt.time }}</td>
-                  <td><span class="badge bg-info">{{ apt.status }}</span></td>
-                </tr>
-              </tbody>
-            </table>
+            <div v-else class="table-responsive">
+              <table class="table table-sm table-hover">
+                <thead>
+                  <tr>
+                    <th>Doctor</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Diagnosis</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="apt in appointments" :key="apt.id">
+                    <td>{{ apt.doctor_name }}</td>
+                    <td>{{ apt.date }}</td>
+                    <td><span :class="['badge', getStatusClass(apt.status)]">{{ apt.status }}</span></td>
+                    <td>
+                      <button v-if="apt.diagnosis" class="btn btn-sm btn-info text-white" @click="showDiagnosis(apt)">
+                        👁️ View Treatment
+                      </button>
+                      <span v-else class="text-muted">-</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Treatment Detail Modal -->
+    <div v-if="selectedTreatment" class="modal d-block" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-info text-white">
+            <h5 class="modal-title">Treatment Details</h5>
+            <button type="button" class="btn-close" @click="selectedTreatment = null"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <h6 class="fw-bold text-primary">📋 Diagnosis:</h6>
+              <p class="bg-light p-2 rounded border">{{ selectedTreatment.diagnosis || 'N/A' }}</p>
+            </div>
+            <div class="mb-3">
+              <h6 class="fw-bold text-success">💊 Prescription:</h6>
+              <p class="bg-light p-2 rounded border" style="white-space: pre-line;">{{ selectedTreatment.prescription || 'N/A' }}</p>
+            </div>
+            <div>
+              <h6 class="fw-bold text-secondary">📝 Doctor's Notes:</h6>
+              <p class="bg-light p-2 rounded border" style="white-space: pre-line;">{{ selectedTreatment.notes || 'N/A' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { adminAPI } from '../../services/api'
+
 const route = useRoute()
 const loading = ref(true)
 const error = ref('')
 const patient = ref({})
 const appointments = ref([])
+const selectedTreatment = ref(null)
+
+const getStatusClass = (status) => {
+  const classes = {
+    'Booked': 'bg-info',
+    'Completed': 'bg-success',
+    'Cancelled': 'bg-danger'
+  }
+  return classes[status] || 'bg-secondary'
+}
+
+const showDiagnosis = (apt) => {
+  selectedTreatment.value = {
+    diagnosis: apt.diagnosis,
+    prescription: apt.prescription,
+    notes: apt.notes
+  }
+}
+
 onMounted(async () => {
   try {
     const response = await adminAPI.getPatientDetail(route.params.id)

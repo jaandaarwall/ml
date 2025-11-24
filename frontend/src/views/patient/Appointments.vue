@@ -39,18 +39,23 @@
 
     <!-- Main Content -->
     <div class="flex-grow-1">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4 mb-4 d-flex justify-content-between align-items-center">
         <div>
           <h1 class="mb-1">📅 My Appointments</h1>
           <p class="text-muted mb-0">View and manage your appointments</p>
         </div>
-        <RouterLink to="/patient/book-appointment" class="btn btn-primary">
-          ➕ Book New Appointment
-        </RouterLink>
+        <div class="d-flex gap-2">
+          <!-- Sorting Dropdown -->
+          <select v-model="sortOrder" class="form-select">
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+          <RouterLink to="/patient/book-appointment" class="btn btn-primary">
+            ➕ Book New
+          </RouterLink>
+        </div>
       </div>
 
-      <!-- Content -->
       <div class="container-fluid px-4 pb-5">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
@@ -62,7 +67,7 @@
           {{ error }}
         </div>
 
-        <div v-else-if="appointments.length === 0" class="alert alert-info">
+        <div v-else-if="sortedAppointments.length === 0" class="alert alert-info">
           No appointments yet. <RouterLink to="/patient/book-appointment">Book one now!</RouterLink>
         </div>
 
@@ -74,34 +79,41 @@
                 <th>Date</th>
                 <th>Time</th>
                 <th>Doctor</th>
-                <th>Specialization</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="apt in appointments" :key="apt.id">
+              <tr v-for="apt in sortedAppointments" :key="apt.id">
                 <td>#{{ apt.id }}</td>
                 <td>{{ apt.date }}</td>
                 <td>{{ apt.time }}</td>
                 <td>{{ apt.doctor_name }}</td>
-                <td>
-                  <span class="badge bg-info">{{ apt.department }}</span>
-                </td>
                 <td>
                   <span :class="['badge', getStatusClass(apt.status)]">
                     {{ apt.status }}
                   </span>
                 </td>
                 <td>
+                  <!-- Cancel Action -->
                   <button 
                     v-if="apt.status === 'Booked'"
                     @click="cancelAppointment(apt.id)"
-                    class="btn btn-sm btn-danger"
+                    class="btn btn-sm btn-danger me-2"
                   >
                     ❌ Cancel
                   </button>
-                  <span v-else class="text-muted">-</span>
+                  
+                  <!-- Diagnosis Action -->
+                  <button 
+                    v-if="apt.status === 'Completed' && apt.diagnosis"
+                    @click="showDiagnosis(apt)"
+                    class="btn btn-sm btn-info text-white"
+                  >
+                    📋 View Treatment
+                  </button>
+                  
+                  <span v-if="apt.status !== 'Booked' && !apt.diagnosis" class="text-muted">-</span>
                 </td>
               </tr>
             </tbody>
@@ -109,11 +121,38 @@
         </div>
       </div>
     </div>
+
+    <!-- Treatment Detail Modal -->
+    <div v-if="selectedTreatment" class="modal d-block" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">Treatment Details</h5>
+            <button type="button" class="btn-close" @click="selectedTreatment = null"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <h6 class="fw-bold text-primary">📋 Diagnosis:</h6>
+              <p class="bg-light p-2 rounded border">{{ selectedTreatment.diagnosis || 'N/A' }}</p>
+            </div>
+            <div class="mb-3">
+              <h6 class="fw-bold text-success">💊 Prescription:</h6>
+              <p class="bg-light p-2 rounded border" style="white-space: pre-line;">{{ selectedTreatment.prescription || 'N/A' }}</p>
+            </div>
+            <div>
+              <h6 class="fw-bold text-secondary">📝 Doctor's Notes:</h6>
+              <p class="bg-light p-2 rounded border" style="white-space: pre-line;">{{ selectedTreatment.notes || 'N/A' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { patientAPI } from '../../services/api'
@@ -124,6 +163,16 @@ const authStore = useAuthStore()
 const loading = ref(true)
 const error = ref('')
 const appointments = ref([])
+const sortOrder = ref('desc')
+const selectedTreatment = ref(null)
+
+const sortedAppointments = computed(() => {
+  return [...appointments.value].sort((a, b) => {
+    const dateA = new Date(`${a.date} ${a.time}`)
+    const dateB = new Date(`${b.date} ${b.time}`)
+    return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA
+  })
+})
 
 const getStatusClass = (status) => {
   const classes = {
@@ -156,12 +205,11 @@ const cancelAppointment = async (appointmentId) => {
   }
 }
 
-const handleLogout = async () => {
-  try {
-    await authStore.logout()
-    router.push('/login')
-  } catch (error) {
-    console.error('Logout error:', error)
+const showDiagnosis = (apt) => {
+  selectedTreatment.value = {
+    diagnosis: apt.diagnosis,
+    prescription: apt.prescription,
+    notes: apt.notes
   }
 }
 

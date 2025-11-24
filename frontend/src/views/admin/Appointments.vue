@@ -33,11 +33,17 @@
           <h1 class="mb-1">📅 All Appointments</h1>
           <p class="text-muted mb-0">View and manage all appointments in the system</p>
         </div>
-        <button class="btn btn-primary" @click="showExportModal = true" :disabled="exporting">
-          <span v-if="exporting" class="spinner-border spinner-border-sm me-2"></span>
-          <span v-if="exporting">Generating...</span>
-          <span v-else>📥 Export CSV</span>
-        </button>
+        <div class="d-flex gap-2">
+          <select v-model="sortOrder" class="form-select" style="width: 150px;">
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+          <button class="btn btn-primary" @click="showExportModal = true" :disabled="exporting">
+            <span v-if="exporting" class="spinner-border spinner-border-sm me-2"></span>
+            <span v-if="exporting">Generating...</span>
+            <span v-else>📥 Export CSV</span>
+          </button>
+        </div>
       </div>
 
       <!-- Content -->
@@ -50,7 +56,7 @@
 
         <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
 
-        <div v-else-if="appointments.length === 0" class="alert alert-info text-center">
+        <div v-else-if="sortedAppointments.length === 0" class="alert alert-info text-center">
           No appointments found
         </div>
 
@@ -68,11 +74,10 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(apt, index) in appointments" :key="apt.id">
+              <tr v-for="(apt, index) in sortedAppointments" :key="apt.id">
                 <td><span class="badge bg-light text-dark">#{{ index + 1 }}</span></td>
                 <td class="fw-bold">{{ apt.patient_name }}</td>
                 <td>Dr. {{ apt.doctor_name }}</td>
-                <!-- Fixed variable names below -->
                 <td>{{ apt.date }}</td>
                 <td>{{ apt.time }}</td>
                 <td>
@@ -123,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { adminAPI } from '../../services/api'
@@ -137,6 +142,15 @@ const error = ref('')
 const appointments = ref([])
 const showExportModal = ref(false)
 const exportDates = ref({ start: '', end: '' })
+const sortOrder = ref('desc')
+
+const sortedAppointments = computed(() => {
+  return [...appointments.value].sort((a, b) => {
+    const dateA = new Date(`${a.date} ${a.time}`)
+    const dateB = new Date(`${b.date} ${b.time}`)
+    return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA
+  })
+})
 
 const fetchAppointments = async () => {
   try {

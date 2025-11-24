@@ -32,11 +32,17 @@
           <h1 class="mb-1">💰 Transaction History</h1>
           <p class="text-muted mb-0">View details of all payment transactions</p>
         </div>
-        <button class="btn btn-primary" @click="showExportModal = true" :disabled="exporting">
-          <span v-if="exporting" class="spinner-border spinner-border-sm me-2"></span>
-          <span v-if="exporting">Generating...</span>
-          <span v-else>📥 Export CSV</span>
-        </button>
+        <div class="d-flex gap-2">
+          <select v-model="sortOrder" class="form-select" style="width: 150px;">
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+          <button class="btn btn-primary" @click="showExportModal = true" :disabled="exporting">
+            <span v-if="exporting" class="spinner-border spinner-border-sm me-2"></span>
+            <span v-if="exporting">Generating...</span>
+            <span v-else>📥 Export CSV</span>
+          </button>
+        </div>
       </div>
 
       <!-- Content -->
@@ -49,7 +55,7 @@
 
         <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
 
-        <div v-else-if="transactions.length === 0" class="alert alert-info text-center">
+        <div v-else-if="sortedTransactions.length === 0" class="alert alert-info text-center">
           No transactions found
         </div>
 
@@ -67,7 +73,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="txn in transactions" :key="txn.id">
+              <tr v-for="txn in sortedTransactions" :key="txn.id">
                 <td><span class="badge bg-light text-dark">#{{ txn.id }}</span></td>
                 <td>{{ txn.date }}</td>
                 <td class="fw-bold">{{ txn.patient }}</td>
@@ -121,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { adminAPI } from '../../services/api'
@@ -135,6 +141,15 @@ const error = ref('')
 const transactions = ref([])
 const showExportModal = ref(false)
 const exportDates = ref({ start: '', end: '' })
+const sortOrder = ref('desc')
+
+const sortedTransactions = computed(() => {
+  return [...transactions.value].sort((a, b) => {
+    const dateA = new Date(a.date)
+    const dateB = new Date(b.date)
+    return sortOrder.value === 'asc' ? dateA - dateB : dateB - dateA
+  })
+})
 
 const fetchTransactions = async () => {
   try {

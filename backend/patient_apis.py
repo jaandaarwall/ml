@@ -226,6 +226,7 @@ class PatientAppointmentsAPI(Resource):
         
         appointments_list = []
         for apt in appointments:
+            treatment = Treatment.query.filter_by(appointment_id=apt.id).first()
             appointments_list.append({
                 'id': apt.id,
                 'doctor_name': apt.doctor.user.username,
@@ -233,7 +234,10 @@ class PatientAppointmentsAPI(Resource):
                 'date': apt.appointment_date.strftime('%Y-%m-%d'),
                 'time': apt.appointment_time.strftime('%H:%M'),
                 'status': apt.status,
-                'reason': apt.reason
+                'reason': apt.reason,
+                'diagnosis': treatment.diagnosis if treatment else None,
+                'prescription': treatment.prescription if treatment else None,
+                'notes': treatment.notes if treatment else None
             })
         
         return make_response(jsonify(appointments_list), 200)
