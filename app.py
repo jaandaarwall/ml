@@ -53,17 +53,8 @@ def init_db(app):
         doctor_role = user_datastore.find_or_create_role(name='doctor', description='Doctor')
         user_role = user_datastore.find_or_create_role(name='user', description='User')
 
-        admin = user_datastore.find_user(email='admin@hospital.com')
-
-        if not admin:
-            admin_user = user_datastore.create_user(
-                username='admin',
-                email='admin@hospital.com',
-                password=utils.hash_password('admin123'),
-                active=True,
-                roles=[admin_role, doctor_role, user_role]
-            )
-        
+        # Ensure departments exist first
+        cardiology = None
         for dept_data in [
             {'name': 'Cardiology', 'description': 'Heart and cardiovascular system', 'price': 300.0},
             {'name': 'Neurology', 'description': 'Brain and nervous system', 'price': 400.0},
@@ -74,9 +65,52 @@ def init_db(app):
         ]:
             existing = Department.query.filter_by(name=dept_data['name']).first()
             if not existing:
-                db.session.add(Department(**dept_data))
-
+                dept = Department(**dept_data)
+                db.session.add(dept)
+                if dept_data['name'] == 'Cardiology':
+                    cardiology = dept
+            elif dept_data['name'] == 'Cardiology':
+                cardiology = existing
+        
         db.session.commit()
+
+        # Create or Update Admin User
+        admin = user_datastore.find_user(email='admin@hospital.com')
+        if not admin:
+            admin = user_datastore.create_user(
+                username='admin',
+                email='admin@hospital.com',
+                password=utils.hash_password('admin123'),
+                active=True,
+                roles=[admin_role, doctor_role, user_role]
+            )
+            db.session.commit()
+
+        # Ensure Admin has a Doctor Profile (since they have the doctor role)
+        if doctor_role in admin.roles:
+            admin_doctor = Doctor.query.filter_by(user_id=admin.id).first()
+            if not admin_doctor:
+                # Fetch Cardiology department for default admin doctor profile
+                if not cardiology:
+                    cardiology = Department.query.filter_by(name='Cardiology').first()
+                
+                admin_doctor = Doctor(
+                    user_id=admin.id,
+                    department_id=cardiology.id if cardiology else 1,
+                    qualification="MBBS, MD (Admin)",
+                    experience_years=10,
+                    is_active=True
+                )
+                db.session.add(admin_doctor)
+                db.session.commit()
+
+        # Ensure Admin has a Patient Profile (since they have the user role)
+        if user_role in admin.roles:
+            admin_patient = Patient.query.filter_by(user_id=admin.id).first()
+            if not admin_patient:
+                admin_patient = Patient(user_id=admin.id)
+                db.session.add(admin_patient)
+                db.session.commit()
 
 
 from backend.authentication_apis import LoginAPI, LogoutAPI, RegisterAPI, CheckEmailAPI
