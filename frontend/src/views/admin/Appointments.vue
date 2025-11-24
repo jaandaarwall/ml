@@ -72,8 +72,9 @@
                 <td><span class="badge bg-light text-dark">#{{ index + 1 }}</span></td>
                 <td class="fw-bold">{{ apt.patient_name }}</td>
                 <td>Dr. {{ apt.doctor_name }}</td>
-                <td>{{ apt.appointment_date }}</td>
-                <td>{{ apt.appointment_time }}</td>
+                <!-- Fixed variable names below -->
+                <td>{{ apt.date }}</td>
+                <td>{{ apt.time }}</td>
                 <td>
                   <span v-if="apt.status === 'Completed'" class="badge bg-success">
                     {{ apt.status }}
