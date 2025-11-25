@@ -32,6 +32,7 @@ class DoctorDashboardAPI(Resource):
         for apt in today_appointments:
             today_list.append({
                 'id': apt.id,
+                'patient_id': apt.patient_id, # Added patient_id
                 'patient_name': apt.patient.user.username,
                 'time': apt.appointment_time.strftime('%H:%M'),
                 'status': apt.status,
@@ -42,9 +43,11 @@ class DoctorDashboardAPI(Resource):
         for apt in upcoming_appointments:
             upcoming_list.append({
                 'id': apt.id,
+                'patient_id': apt.patient_id, # Added patient_id
                 'patient_name': apt.patient.user.username,
                 'date': apt.appointment_date.strftime('%Y-%m-%d'),
-                'time': apt.appointment_time.strftime('%H:%M')
+                'time': apt.appointment_time.strftime('%H:%M'),
+                'status': apt.status # Included status
             })
         
         return make_response(jsonify({
@@ -241,6 +244,7 @@ class DoctorPatientHistoryAPI(Resource):
     @roles_required('doctor')
     def get(self, patient_id):
         doctor = Doctor.query.filter_by(user_id=current_user.id).first_or_404()
+        patient = Patient.query.get_or_404(patient_id) # Fetch patient details
         
         appointments = Appointment.query.filter_by(
             doctor_id=doctor.id,
@@ -258,7 +262,27 @@ class DoctorPatientHistoryAPI(Resource):
                 'notes': treatment.notes if treatment else None
             })
         
-        return make_response(jsonify(history), 200)
+        # Calculate Age
+        age = None
+        if patient.user.date_of_birth:
+            today = datetime.now().date()
+            dob = patient.user.date_of_birth
+            age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+        patient_details = {
+            'name': patient.user.username,
+            'email': patient.user.email,
+            'phone': patient.user.phone,
+            'blood_group': patient.user.blood_group,
+            'gender': patient.user.gender,
+            'age': age,
+            'dob': patient.user.date_of_birth.strftime('%Y-%m-%d') if patient.user.date_of_birth else None
+        }
+        
+        return make_response(jsonify({
+            'patient': patient_details,
+            'history': history
+        }), 200)
 
 class DoctorProfileAPI(Resource):
     @auth_token_required

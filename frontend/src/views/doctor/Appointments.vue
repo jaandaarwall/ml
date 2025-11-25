@@ -1,4 +1,3 @@
-<!-- views/doctor/Appointments.vue -->
 <template>
   <div class="d-flex" style="min-height: 100vh; background-color: #f8f9fa;">
     <!-- Sidebar (Keep existing sidebar code) -->
@@ -78,15 +77,15 @@
                     </td>
                     <td>
                       <div class="btn-group">
-                        <!-- Treatment Button -->
-                        <RouterLink v-if="apt.status === 'Booked'" 
+                        <!-- Treatment Button: Shows for both Booked and Completed (to edit) -->
+                        <RouterLink v-if="apt.status === 'Booked' || apt.status === 'Completed'" 
                           :to="`/doctor/appointment/${apt.id}/treatment`"
-                          class="btn btn-sm btn-success">
-                          ✏️ Treatment
+                          :class="['btn', 'btn-sm', apt.status === 'Completed' ? 'btn-warning' : 'btn-success']">
+                          {{ apt.status === 'Completed' ? '✏️ Edit Treatment' : '💊 Start Treatment' }}
                         </RouterLink>
                         
                         <!-- Patient Detail Button -->
-                        <button @click="openPatientDetails(apt.patient_id, apt.patient_name)" 
+                        <button @click="openPatientDetails(apt.patient_id)" 
                                 class="btn btn-sm btn-info text-white">
                           👤 Patient Detail
                         </button>
@@ -106,28 +105,54 @@
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header bg-info text-white">
-            <h5 class="modal-title">Patient History: {{ selectedPatientName }}</h5>
+            <h5 class="modal-title">Patient Information</h5>
             <button type="button" class="btn-close" @click="showPatientModal = false"></button>
           </div>
-          <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-            <div v-if="loadingHistory" class="text-center">
+          <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+            <div v-if="loadingHistory" class="text-center py-4">
               <div class="spinner-border text-info"></div>
             </div>
-            <div v-else-if="patientHistory.length === 0" class="alert alert-warning">
-              No previous treatment history found for this patient.
-            </div>
+            
             <div v-else>
-              <div v-for="(record, index) in patientHistory" :key="index" class="card mb-3 border">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                  <strong>📅 {{ record.date }}</strong>
-                  <button class="btn btn-sm btn-outline-primary" @click="toggleDiagnosis(index)">
-                    {{ record.showDetails ? 'Hide' : 'Show' }} Diagnosis
-                  </button>
+              <!-- Patient Personal Details -->
+              <div class="card mb-4 border-info">
+                <div class="card-header bg-light text-info fw-bold">
+                  👤 Personal Details
                 </div>
-                <div v-if="record.showDetails" class="card-body">
-                  <p><strong>📋 Diagnosis:</strong> {{ record.diagnosis }}</p>
-                  <p><strong>💊 Prescription:</strong> {{ record.prescription }}</p>
-                  <p class="mb-0"><strong>📝 Notes:</strong> {{ record.notes }}</p>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p class="mb-2"><strong>Name:</strong> {{ patientDetails.name }}</p>
+                      <p class="mb-2"><strong>Age:</strong> {{ patientDetails.age || 'N/A' }} ({{ patientDetails.gender || 'N/A' }})</p>
+                      <p class="mb-0"><strong>Blood Group:</strong> <span class="badge bg-danger">{{ patientDetails.blood_group || 'N/A' }}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                      <p class="mb-2"><strong>Email:</strong> {{ patientDetails.email }}</p>
+                      <p class="mb-2"><strong>Phone:</strong> {{ patientDetails.phone || 'N/A' }}</p>
+                      <p class="mb-0"><strong>DOB:</strong> {{ patientDetails.dob || 'N/A' }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Medical History -->
+              <h5 class="mb-3 text-secondary">📋 Medical History</h5>
+              <div v-if="patientHistory.length === 0" class="alert alert-warning">
+                No previous treatment history found for this patient.
+              </div>
+              <div v-else>
+                <div v-for="(record, index) in patientHistory" :key="index" class="card mb-3 border">
+                  <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <strong>📅 {{ record.date }}</strong>
+                    <button class="btn btn-sm btn-outline-primary" @click="toggleDiagnosis(index)">
+                      {{ record.showDetails ? 'Hide' : 'Show' }} Diagnosis
+                    </button>
+                  </div>
+                  <div v-if="record.showDetails" class="card-body">
+                    <p><strong>📋 Diagnosis:</strong> {{ record.diagnosis }}</p>
+                    <p><strong>💊 Prescription:</strong> {{ record.prescription }}</p>
+                    <p class="mb-0"><strong>📝 Notes:</strong> {{ record.notes }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,7 +205,7 @@ const sortOrder = ref('desc')
 const showPatientModal = ref(false)
 const loadingHistory = ref(false)
 const patientHistory = ref([])
-const selectedPatientName = ref('')
+const patientDetails = ref({}) // Store patient info
 
 // Export State
 const exporting = ref(false)
@@ -200,16 +225,17 @@ const getStatusClass = (status) => {
   return classes[status] || 'bg-secondary'
 }
 
-const openPatientDetails = async (patientId, patientName) => {
-  selectedPatientName.value = patientName
+const openPatientDetails = async (patientId) => {
   showPatientModal.value = true
   loadingHistory.value = true
   patientHistory.value = []
+  patientDetails.value = {}
   
   try {
     const response = await doctorAPI.getPatientHistory(patientId)
-    // Add local state for toggling diagnosis visibility
-    patientHistory.value = response.map(record => ({ ...record, showDetails: false }))
+    // Backend now returns { patient: {...}, history: [...] }
+    patientDetails.value = response.patient
+    patientHistory.value = response.history.map(record => ({ ...record, showDetails: false }))
   } catch (err) {
     console.error("Failed to load history", err)
   } finally {
