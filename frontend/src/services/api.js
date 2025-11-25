@@ -168,6 +168,9 @@ export const patientAPI = {
     return apiCall(url)
   },
 
+  getAvailableDates: (doctorId) => 
+    apiCall(`/patient/doctor/${doctorId}/available-dates`),
+
   getDoctorAvailability: (doctorId, date) => 
     apiCall(`/patient/doctor/${doctorId}/availability?date=${date}`),
 

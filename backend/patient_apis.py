@@ -85,6 +85,53 @@ class PatientDoctorsAPI(Resource):
         
         return make_response(jsonify(doctors_list), 200)
 
+class PatientAvailableDatesAPI(Resource):
+    @auth_token_required
+    @roles_required('user')
+    def get(self, doctor_id):
+        # Get availability for next 30 days
+        today = datetime.now().date()
+        end_date = today + timedelta(days=30)
+        
+        # Fetch all availability records for this doctor in the date range
+        availabilities = DoctorAvailability.query.filter(
+            DoctorAvailability.doctor_id == doctor_id,
+            DoctorAvailability.date >= today,
+            DoctorAvailability.date <= end_date,
+            DoctorAvailability.is_available == True
+        ).order_by(DoctorAvailability.date).all()
+        
+        available_dates = set()
+        
+        for avail in availabilities:
+            # Calculate max capacity for this specific shift/availability record
+            # Convert times to dummy datetime to perform subtraction
+            dummy_date = datetime(2000, 1, 1).date()
+            start_dt = datetime.combine(dummy_date, avail.start_time)
+            end_dt = datetime.combine(dummy_date, avail.end_time)
+            
+            duration_mins = (end_dt - start_dt).total_seconds() / 60
+            slots_count = int(duration_mins // 30)
+            total_capacity = slots_count * avail.total_seats
+            
+            # Get count of bookings strictly within this shift's time window
+            booked_count = Appointment.query.filter(
+                Appointment.doctor_id == doctor_id,
+                Appointment.appointment_date == avail.date,
+                Appointment.appointment_time >= avail.start_time,
+                Appointment.appointment_time < avail.end_time,
+                Appointment.status == 'Booked'
+            ).count()
+            
+            # If there is at least one seat left in the aggregate for this shift
+            if booked_count < total_capacity:
+                available_dates.add(avail.date.strftime('%Y-%m-%d'))
+        
+        # Sort the dates
+        sorted_dates = sorted(list(available_dates))
+                
+        return make_response(jsonify(sorted_dates), 200)
+
 class PatientDoctorAvailabilityAPI(Resource):
     @auth_token_required
     @roles_required('user')

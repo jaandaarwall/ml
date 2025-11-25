@@ -130,12 +130,21 @@
 
                 <div class="mb-3">
                   <label class="form-label fw-bold">Select Date:</label>
-                  <input 
+                  <div v-if="loadingDates" class="text-center py-2">
+                    <div class="spinner-border spinner-border-sm text-primary"></div> Loading dates...
+                  </div>
+                  <select 
+                    v-else
                     v-model="bookingData.date" 
-                    type="date" 
-                    class="form-control"
+                    class="form-select"
                     @change="fetchAvailability"
                   >
+                    <option value="" disabled>Select an Available Date</option>
+                    <option v-for="date in availableDates" :key="date" :value="date">{{ date }}</option>
+                  </select>
+                  <small v-if="availableDates.length === 0 && !loadingDates" class="text-danger">
+                    No available dates for this doctor in the next 30 days.
+                  </small>
                 </div>
 
                 <div v-if="loadingSlots" class="text-center py-3">
@@ -202,12 +211,14 @@ const authStore = useAuthStore()
 
 const loadingDoctors = ref(false)
 const loadingSlots = ref(false)
+const loadingDates = ref(false)
 const bookingAppointment = ref(false)
 const error = ref('')
 const bookingError = ref('')
 
 const departments = ref([])
 const doctors = ref([])
+const availableDates = ref([])
 const availableSlots = ref([])
 const selectedDept = ref(route.query.department_id || '')
 const selectedDoctor = ref(null)
@@ -242,34 +253,45 @@ const fetchDoctors = async () => {
   try {
     const response = await patientAPI.getDoctors(selectedDept.value || null)
     doctors.value = response
-    console.log('Doctors fetched:', response)
-    console.log('Selected department:', selectedDept.value)
-    console.log('Filtered doctors:', filteredDoctors.value)
   } catch (err) {
     error.value = err.message || 'Failed to load doctors'
-    console.error('Error fetching doctors:', err)
   } finally {
     loadingDoctors.value = false
   }
 }
 
-const selectDoctor = (doctor) => {
+const selectDoctor = async (doctor) => {
   selectedDoctor.value = doctor
   showBookingModal.value = true
   bookingData.value = { date: '', time: '', reason: '' }
   bookingError.value = ''
+  availableDates.value = []
+  availableSlots.value = []
+  
+  // Fetch available dates
+  loadingDates.value = true
+  try {
+    const dates = await patientAPI.getAvailableDates(doctor.id)
+    availableDates.value = dates
+  } catch (err) {
+    bookingError.value = 'Failed to load available dates'
+  } finally {
+    loadingDates.value = false
+  }
 }
 
 const fetchAvailability = async () => {
   if (!bookingData.value.date || !selectedDoctor.value) return
 
   loadingSlots.value = true
+  availableSlots.value = []
+  bookingData.value.time = ''
+  
   try {
     const response = await patientAPI.getDoctorAvailability(selectedDoctor.value.id, bookingData.value.date)
     availableSlots.value = response
   } catch (err) {
     console.error('Failed to load slots', err)
-    availableSlots.value = []
   } finally {
     loadingSlots.value = false
   }

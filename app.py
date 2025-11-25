@@ -127,7 +127,7 @@ from backend.doctor_apis import (DoctorDashboardAPI, DoctorAppointmentsAPI, Doct
                                  DoctorPatientHistoryAPI, DoctorProfileAPI)
 from backend.patient_apis import (PatientDashboardAPI, PatientDoctorsAPI, PatientDoctorAvailabilityAPI,
                                   PatientBookAppointmentAPI, PatientAppointmentsAPI, PatientCancelAppointmentAPI,
-                                  PatientHistoryAPI, PatientProfileAPI)
+                                  PatientHistoryAPI, PatientProfileAPI, PatientAvailableDatesAPI)
 
 # Auth APIs
 api.add_resource(LoginAPI, '/login')
@@ -165,6 +165,7 @@ api.add_resource(PatientAppointmentsAPI, '/patient/appointments')
 api.add_resource(PatientCancelAppointmentAPI, '/patient/appointment/<int:appointment_id>/cancel')
 api.add_resource(PatientHistoryAPI, '/patient/history')
 api.add_resource(PatientProfileAPI, '/patient/profile')
+api.add_resource(PatientAvailableDatesAPI, '/patient/doctor/<int:doctor_id>/available-dates')
 
 # General APIs
 api.add_resource(DepartmentsAPI, '/departments')
