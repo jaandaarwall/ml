@@ -47,7 +47,7 @@
           <div class="col-12">
             <div class="card h-100">
               <div class="card-header bg-light text-success">
-                <h5 class="mb-0">💰 Monthly Revenue</h5>
+                <h5 class="mb-0">💰 Monthly Revenue vs Refunds</h5>
               </div>
               <div class="card-body">
                 <div class="chart-container">
@@ -61,7 +61,7 @@
           <div class="col-lg-6">
             <div class="card h-100">
               <div class="card-header bg-light">
-                <h5 class="mb-0">Appointments per Month</h5>
+                <h5 class="mb-0">Appointments vs Cancellations per Month</h5>
               </div>
               <div class="card-body">
                 <div class="chart-container">
@@ -98,6 +98,20 @@
               </div>
             </div>
           </div>
+
+          <!-- Top Active Doctors -->
+          <div class="col-lg-6">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h5 class="mb-0">🏆 Top 10 Active Doctors (This Month)</h5>
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas ref="chartTopDocs"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -120,6 +134,7 @@ const chartMonth = ref(null)
 const chartDept = ref(null)
 const chartStatus = ref(null)
 const chartRevenue = ref(null)
+const chartTopDocs = ref(null)
 
 const fetchAnalytics = async () => {
   try {
@@ -128,19 +143,28 @@ const fetchAnalytics = async () => {
     loading.value = false
     await nextTick()
 
-    // Revenue Chart
+    // Revenue vs Refunds Chart
     if (chartRevenue.value) {
       new Chart(chartRevenue.value.getContext('2d'), {
         type: 'bar',
         data: {
           labels: data.revenue_per_month.labels,
-          datasets: [{
-            label: 'Revenue (₹)',
-            data: data.revenue_per_month.values,
-            backgroundColor: 'rgba(40, 167, 69, 0.6)',
-            borderColor: '#28a745',
-            borderWidth: 1
-          }]
+          datasets: [
+            {
+              label: 'Revenue (₹)',
+              data: data.revenue_per_month.revenue,
+              backgroundColor: 'rgba(40, 167, 69, 0.6)',
+              borderColor: '#28a745',
+              borderWidth: 1
+            },
+            {
+              label: 'Refunds (₹)',
+              data: data.revenue_per_month.refunded,
+              backgroundColor: 'rgba(220, 53, 69, 0.6)',
+              borderColor: '#dc3545',
+              borderWidth: 1
+            }
+          ]
         },
         options: { 
           responsive: true, 
@@ -152,26 +176,56 @@ const fetchAnalytics = async () => {
                 callback: (value) => '₹' + value
               }
             }
+          },
+          plugins: {
+            tooltip: {
+              mode: 'index',
+              intersect: false
+            }
           }
         }
       })
     }
 
+    // Appointments vs Cancellations Chart
     if (chartMonth.value) {
       new Chart(chartMonth.value.getContext('2d'), {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: data.appointments_per_month.labels,
-          datasets: [{
-            label: 'Appointments',
-            data: data.appointments_per_month.values,
-            borderColor: '#0d6efd',
-            backgroundColor: 'rgba(13, 110, 253, 0.1)',
-            tension: 0.1,
-            fill: true
-          }]
+          datasets: [
+            {
+              label: 'Total Appointments',
+              data: data.appointments_per_month.total,
+              backgroundColor: 'rgba(13, 110, 253, 0.6)',
+              borderColor: '#0d6efd',
+              borderWidth: 1
+            },
+            {
+              label: 'Cancelled',
+              data: data.appointments_per_month.cancelled,
+              backgroundColor: 'rgba(220, 53, 69, 0.6)',
+              borderColor: '#dc3545',
+              borderWidth: 1
+            }
+          ]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          }
+        }
       })
     }
 
@@ -197,10 +251,40 @@ const fetchAnalytics = async () => {
           labels: data.appointment_status_summary.labels,
           datasets: [{
             data: data.appointment_status_summary.values,
-            backgroundColor: ['#0d6efd', '#198754', '#dc3545', '#ffc107']
+            backgroundColor: ['#0d6efd', '#198754', '#dc3545', '#ffc107', '#6c757d']
           }]
         },
         options: { responsive: true, maintainAspectRatio: false }
+      })
+    }
+
+    // Top Active Doctors Chart
+    if (chartTopDocs.value) {
+      new Chart(chartTopDocs.value.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: data.top_active_doctors.labels,
+          datasets: [{
+            label: 'Appointments Completed',
+            data: data.top_active_doctors.values,
+            backgroundColor: 'rgba(255, 193, 7, 0.6)',
+            borderColor: '#ffc107',
+            borderWidth: 1
+          }]
+        },
+        options: { 
+          indexAxis: 'y',
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          }
+        }
       })
     }
 
