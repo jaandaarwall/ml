@@ -4,6 +4,7 @@ from flask_security import auth_token_required, roles_required, current_user
 from .Sqldatabase import db
 from .models import *
 from .tasks import export_patient_csv
+from .mail import send_email
 from datetime import datetime, timedelta
 from .cache import cache
 
@@ -303,6 +304,20 @@ class PatientCancelAppointmentAPI(Resource):
             # Update payment status to indicate a refund was processed
             payment.status = 'Refunded'
             refund_msg = f" ₹{refund_amount} (90%) has been refunded to your original payment method."
+            
+            # Send refund notification email
+            subject = "Appointment Cancellation & Refund Processed"
+            body = f"""Hello {patient.user.username},
+
+Your appointment with Dr. {appointment.doctor.user.username} scheduled for {appointment.appointment_date.strftime('%Y-%m-%d')} at {appointment.appointment_time.strftime('%H:%M')} has been successfully cancelled.
+
+As per our cancellation policy, a refund of ₹{refund_amount:.2f} (90% of the payment) has been initiated to your original payment method. Please allow 3-5 business days for the amount to reflect in your account.
+
+Thank you for choosing our services.
+
+Best regards,
+Hospital Management Team"""
+            send_email(patient.user.email, subject, body)
 
         appointment.status = 'Cancelled'
         db.session.commit()
