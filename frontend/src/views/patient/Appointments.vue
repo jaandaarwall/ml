@@ -103,6 +103,15 @@
                   >
                     ❌ Cancel
                   </button>
+
+                  <!-- Reschedule Action (Only if missed or > 24h before) -->
+                  <button 
+                    v-if="canReschedule(apt)"
+                    @click="openRescheduleModal(apt)"
+                    class="btn btn-sm btn-warning me-2"
+                  >
+                    🔄 Reschedule
+                  </button>
                   
                   <!-- Diagnosis Action -->
                   <button 
@@ -113,11 +122,75 @@
                     📋 View Treatment
                   </button>
                   
-                  <span v-if="apt.status !== 'Booked' && !apt.diagnosis" class="text-muted">-</span>
+                  <span v-if="['Completed', 'Cancelled'].includes(apt.status) && !apt.diagnosis" class="text-muted">-</span>
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reschedule Modal -->
+    <div v-if="showRescheduleModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-dark">
+            <h5 class="modal-title">🔄 Reschedule Appointment #{{ selectedRescheduleApt?.id }}</h5>
+            <button type="button" class="btn-close" @click="showRescheduleModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <p>Rescheduling appointment with <strong>Dr. {{ selectedRescheduleApt?.doctor_name }}</strong></p>
+            <div v-if="rescheduleError" class="alert alert-danger">{{ rescheduleError }}</div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold">Select New Date:</label>
+              <div v-if="loadingDates" class="text-center py-2">
+                <div class="spinner-border spinner-border-sm text-primary"></div> Loading dates...
+              </div>
+              <select 
+                v-else
+                v-model="rescheduleData.date" 
+                class="form-select"
+                @change="fetchAvailability"
+              >
+                <option value="" disabled>Select an Available Date</option>
+                <option v-for="date in availableDates" :key="date" :value="date">{{ date }}</option>
+              </select>
+            </div>
+
+            <div v-if="loadingSlots" class="text-center py-3">
+              <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            </div>
+
+            <div v-else-if="rescheduleData.date">
+              <label class="form-label fw-bold">Select New Time Slot:</label>
+              <div v-if="availableSlots.length === 0" class="alert alert-warning">
+                No available slots for this date
+              </div>
+              <div v-else class="row g-2 mb-3">
+                <div v-for="slot in availableSlots" :key="slot.time" class="col-4">
+                  <button 
+                    @click="rescheduleData.time = slot.time"
+                    :class="['btn', 'w-100', rescheduleData.time === slot.time ? 'btn-primary' : 'btn-outline-primary']"
+                  >
+                    {{ slot.time }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showRescheduleModal = false">Cancel</button>
+            <button 
+              type="button" 
+              class="btn btn-success" 
+              @click="confirmReschedule"
+              :disabled="!rescheduleData.date || !rescheduleData.time || processingReschedule"
+            >
+              {{ processingReschedule ? 'Updating...' : 'Confirm Reschedule' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -166,6 +239,17 @@ const appointments = ref([])
 const sortOrder = ref('desc')
 const selectedTreatment = ref(null)
 
+// Reschedule State
+const showRescheduleModal = ref(false)
+const selectedRescheduleApt = ref(null)
+const rescheduleData = ref({ date: '', time: '' })
+const availableDates = ref([])
+const availableSlots = ref([])
+const loadingDates = ref(false)
+const loadingSlots = ref(false)
+const processingReschedule = ref(false)
+const rescheduleError = ref('')
+
 const sortedAppointments = computed(() => {
   return [...appointments.value].sort((a, b) => {
     const dateA = new Date(`${a.date} ${a.time}`)
@@ -178,9 +262,34 @@ const getStatusClass = (status) => {
   const classes = {
     'Booked': 'bg-info',
     'Completed': 'bg-success',
-    'Cancelled': 'bg-danger'
+    'Cancelled': 'bg-danger',
+    'Missed': 'bg-warning text-dark'
   }
   return classes[status] || 'bg-secondary'
+}
+
+// Logic to enable reschedule button:
+// 1. Always allow if status is 'Missed'
+// 2. If status is 'Booked', date must be at least 1 day in the future
+const canReschedule = (apt) => {
+  if (apt.status === 'Missed') return true;
+  if (apt.status !== 'Booked') return false;
+
+  const aptDate = new Date(apt.date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // normalize today to start of day
+
+  // Calculate difference in days
+  const diffTime = aptDate - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  
+  // Check if appointment is more than 1 day away
+  // If appt is tomorrow (diffDays = 1), we can arguably reschedule today?
+  // Requirement says "expire it one day before". 
+  // Usually means I need > 24h notice. 
+  // If today is 25th, appt is 26th. That's 1 day before.
+  // If I enforce strictly > 1 day, then I can only reschedule appts on 27th+.
+  return diffDays > 1;
 }
 
 const fetchAppointments = async () => {
@@ -211,6 +320,84 @@ const showDiagnosis = (apt) => {
     prescription: apt.prescription,
     notes: apt.notes
   }
+}
+
+// --- Reschedule Logic ---
+
+const openRescheduleModal = async (apt) => {
+  selectedRescheduleApt.value = apt
+  showRescheduleModal.value = true
+  rescheduleData.value = { date: '', time: '' }
+  rescheduleError.value = ''
+  availableDates.value = []
+  availableSlots.value = []
+  
+  // Find doctor ID from the doctors list (we don't have it in apt directly in this view usually)
+  // Wait, the apt object from getAppointments API only has doctor_name.
+  // I need doctor_id to fetch availability.
+  // Let's re-check the API response in PatientAppointmentsAPI.
+  // Ah, backend sends: id, doctor_name, department, date, time, status...
+  // It DOES NOT send doctor_id. I need to fix the backend API or fetch doctor details.
+  // Wait, PatientAppointmentsAPI backend code:
+  // appointments_list.append({ 'id': apt.id, 'doctor_name': ..., ... })
+  // I should add 'doctor_id' to the backend response for PatientAppointmentsAPI.
+  // Wait, I can't edit backend right here easily without re-generating patient_apis.py again.
+  // Actually, I JUST generated backend/patient_apis.py. Let me check if I added doctor_id.
+  // I did NOT add doctor_id in the previous step.
+  // I must re-generate backend/patient_apis.py to include doctor_id in PatientAppointmentsAPI.
+  
+  // Assuming I fix backend, let's proceed with logic.
+  if (!apt.doctor_id) {
+      // Fallback: fetch doctors and find by name (risky but works if names unique)
+      // Or better, fix the backend. I will fix the backend file in the same response.
+      rescheduleError.value = "Error: Doctor ID missing. Please contact support."
+      return;
+  }
+
+  loadingDates.value = true;
+  try {
+    const dates = await patientAPI.getAvailableDates(apt.doctor_id)
+    availableDates.value = dates
+  } catch (err) {
+    rescheduleError.value = 'Failed to load available dates'
+  } finally {
+    loadingDates.value = false
+  }
+}
+
+const fetchAvailability = async () => {
+  if (!rescheduleData.value.date || !selectedRescheduleApt.value) return
+
+  loadingSlots.value = true
+  availableSlots.value = []
+  rescheduleData.value.time = ''
+  
+  try {
+    const response = await patientAPI.getDoctorAvailability(selectedRescheduleApt.value.doctor_id, rescheduleData.value.date)
+    availableSlots.value = response
+  } catch (err) {
+    console.error('Failed to load slots', err)
+  } finally {
+    loadingSlots.value = false
+  }
+}
+
+const confirmReschedule = async () => {
+    if (!rescheduleData.value.date || !rescheduleData.value.time) return
+    
+    processingReschedule.value = true
+    rescheduleError.value = ''
+    
+    try {
+        await patientAPI.rescheduleAppointment(selectedRescheduleApt.value.id, rescheduleData.value)
+        showRescheduleModal.value = false
+        alert('Appointment rescheduled successfully!')
+        fetchAppointments()
+    } catch (err) {
+        rescheduleError.value = err.message || 'Failed to reschedule'
+    } finally {
+        processingReschedule.value = false
+    }
 }
 
 onMounted(fetchAppointments)

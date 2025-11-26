@@ -40,6 +40,43 @@ def send_daily_reminders():
     
     return {"message": f"Sent {len(appointments)} reminders", "count": len(appointments)}
 
+@shared_task(ignore_results=False, name="Check Missed Appointments (9 PM)")
+def check_missed_appointments():
+    today = datetime.now().date()
+    
+    # Find appointments scheduled for today that are still 'Booked' (not Completed/Cancelled)
+    missed_appointments = Appointment.query.filter_by(
+        appointment_date=today,
+        status='Booked'
+    ).all()
+    
+    count = 0
+    for apt in missed_appointments:
+        # Update status to Missed
+        apt.status = 'Missed'
+        db.session.add(apt)
+        
+        # Send Email
+        patient_email = apt.patient.user.email
+        doctor_name = apt.doctor.user.username
+        
+        subject = "Missed Appointment - Action Required"
+        body = f"""Hello {apt.patient.user.username},
+
+It seems you missed your appointment today with Dr. {doctor_name}.
+
+Don't worry! You can easily reschedule this appointment from your dashboard.
+Please login to the portal and go to 'My Appointments' to pick a new time.
+
+Best regards,
+Hospital Management Team"""
+        
+        send_email(patient_email, subject, body)
+        count += 1
+    
+    db.session.commit()
+    return {"message": f"Marked {count} appointments as missed", "count": count}
+
 @shared_task(ignore_results=False, name="Monthly doctor activity report")
 def send_monthly_reports():
     # Calculate previous month range

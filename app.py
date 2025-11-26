@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify
 from backend.celery_app import celery_init_app
-from backend.tasks import example_task, send_daily_reminders, sheduler_task, send_monthly_reports
+from backend.tasks import example_task, send_daily_reminders, sheduler_task, send_monthly_reports, check_missed_appointments
 from celery.schedules import crontab
 from backend.config import Config
 from backend.Sqldatabase import db
@@ -127,7 +127,7 @@ from backend.doctor_apis import (DoctorDashboardAPI, DoctorAppointmentsAPI, Doct
                                  DoctorPatientHistoryAPI, DoctorProfileAPI)
 from backend.patient_apis import (PatientDashboardAPI, PatientDoctorsAPI, PatientDoctorAvailabilityAPI,
                                   PatientBookAppointmentAPI, PatientAppointmentsAPI, PatientCancelAppointmentAPI,
-                                  PatientHistoryAPI, PatientProfileAPI, PatientAvailableDatesAPI)
+                                  PatientHistoryAPI, PatientProfileAPI, PatientAvailableDatesAPI, PatientRescheduleAppointmentAPI)
 
 # Auth APIs
 api.add_resource(LoginAPI, '/login')
@@ -163,6 +163,7 @@ api.add_resource(PatientDoctorAvailabilityAPI, '/patient/doctor/<int:doctor_id>/
 api.add_resource(PatientBookAppointmentAPI, '/patient/book/<int:doctor_id>')
 api.add_resource(PatientAppointmentsAPI, '/patient/appointments')
 api.add_resource(PatientCancelAppointmentAPI, '/patient/appointment/<int:appointment_id>/cancel')
+api.add_resource(PatientRescheduleAppointmentAPI, '/patient/appointment/<int:appointment_id>/reschedule')
 api.add_resource(PatientHistoryAPI, '/patient/history')
 api.add_resource(PatientProfileAPI, '/patient/profile')
 api.add_resource(PatientAvailableDatesAPI, '/patient/doctor/<int:doctor_id>/available-dates')
@@ -181,6 +182,13 @@ def setup_periodic_tasks(sender, **kwargs):
         # crontab(minute=0, hour=8),
         send_daily_reminders.s(),
         name='Daily appointment reminders'
+    )
+    
+    # Check for missed appointments daily at 9 PM
+    sender.add_periodic_task(
+        crontab(minute=0, hour=21),
+        check_missed_appointments.s(),
+        name='Mark missed appointments'
     )
     
     # Send monthly reports on the 1st of every month at 6 AM

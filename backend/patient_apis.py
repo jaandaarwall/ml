@@ -22,8 +22,7 @@ class PatientDashboardAPI(Resource):
         
         upcoming_appointments = Appointment.query.filter(
             Appointment.patient_id == patient.id,
-            Appointment.appointment_date >= datetime.now().date(),
-            Appointment.status == 'Booked'
+            Appointment.status.in_(['Booked', 'Missed'])
         ).order_by(Appointment.appointment_date).all()
         
         past_appointments = Appointment.query.filter(
@@ -32,20 +31,24 @@ class PatientDashboardAPI(Resource):
         ).order_by(Appointment.appointment_date.desc()).limit(5).all()
         
         upcoming_list = []
+        today = datetime.now().date()
         for apt in upcoming_appointments:
-            upcoming_list.append({
-                'id': apt.id,
-                'doctor_name': apt.doctor.user.username,
-                'department': apt.doctor.department.name,
-                'date': apt.appointment_date.strftime('%Y-%m-%d'),
-                'time': apt.appointment_time.strftime('%H:%M'),
-                'status': apt.status
-            })
+            if apt.status == 'Missed' or (apt.status == 'Booked' and apt.appointment_date >= today):
+                upcoming_list.append({
+                    'id': apt.id,
+                    'doctor_id': apt.doctor_id,
+                    'doctor_name': apt.doctor.user.username,
+                    'department': apt.doctor.department.name,
+                    'date': apt.appointment_date.strftime('%Y-%m-%d'),
+                    'time': apt.appointment_time.strftime('%H:%M'),
+                    'status': apt.status
+                })
         
         past_list = []
         for apt in past_appointments:
             past_list.append({
                 'id': apt.id,
+                'doctor_id': apt.doctor_id,
                 'doctor_name': apt.doctor.user.username,
                 'date': apt.appointment_date.strftime('%Y-%m-%d'),
                 'status': apt.status
@@ -59,7 +62,6 @@ class PatientDashboardAPI(Resource):
 class PatientDoctorsAPI(Resource):
     @auth_token_required
     @roles_required('user')
-    # Cache for 5 minutes. Uses query string (department_id) to create distinct keys.
     @cache.cached(timeout=300, query_string=True)
     def get(self):
         department_id = request.args.get('department_id')
@@ -89,11 +91,9 @@ class PatientAvailableDatesAPI(Resource):
     @auth_token_required
     @roles_required('user')
     def get(self, doctor_id):
-        # Get availability for next 30 days
         today = datetime.now().date()
         end_date = today + timedelta(days=30)
         
-        # Fetch all availability records for this doctor in the date range
         availabilities = DoctorAvailability.query.filter(
             DoctorAvailability.doctor_id == doctor_id,
             DoctorAvailability.date >= today,
@@ -104,8 +104,6 @@ class PatientAvailableDatesAPI(Resource):
         available_dates = set()
         
         for avail in availabilities:
-            # Calculate max capacity for this specific shift/availability record
-            # Convert times to dummy datetime to perform subtraction
             dummy_date = datetime(2000, 1, 1).date()
             start_dt = datetime.combine(dummy_date, avail.start_time)
             end_dt = datetime.combine(dummy_date, avail.end_time)
@@ -114,7 +112,6 @@ class PatientAvailableDatesAPI(Resource):
             slots_count = int(duration_mins // 30)
             total_capacity = slots_count * avail.total_seats
             
-            # Get count of bookings strictly within this shift's time window
             booked_count = Appointment.query.filter(
                 Appointment.doctor_id == doctor_id,
                 Appointment.appointment_date == avail.date,
@@ -123,11 +120,9 @@ class PatientAvailableDatesAPI(Resource):
                 Appointment.status == 'Booked'
             ).count()
             
-            # If there is at least one seat left in the aggregate for this shift
             if booked_count < total_capacity:
                 available_dates.add(avail.date.strftime('%Y-%m-%d'))
         
-        # Sort the dates
         sorted_dates = sorted(list(available_dates))
                 
         return make_response(jsonify(sorted_dates), 200)
@@ -135,7 +130,6 @@ class PatientAvailableDatesAPI(Resource):
 class PatientDoctorAvailabilityAPI(Resource):
     @auth_token_required
     @roles_required('user')
-    # Cache for 60s. Doctor availability is high-traffic but dynamic.
     @cache.cached(timeout=60, query_string=True)
     def get(self, doctor_id):
         date_str = request.args.get('date')
@@ -233,7 +227,7 @@ class PatientBookAppointmentAPI(Resource):
         db.session.commit()
                 
         doctor = Doctor.query.get(doctor_id)
-        price = doctor.department.price   # Price based on department
+        price = doctor.department.price
 
         payment = Payment(
             appointment_id=appointment.id,
@@ -245,7 +239,6 @@ class PatientBookAppointmentAPI(Resource):
 
         payment_link = f"http://localhost:5173/payment/{payment.id}"
         
-        # Explicitly invalidate dashboard cache for this user
         cache.delete(f'patient_dashboard_{current_user.id}')
 
         return make_response(jsonify({
@@ -255,8 +248,6 @@ class PatientBookAppointmentAPI(Resource):
             "amount": price,
             "payment_url": payment_link
         }), 201)
-
-
 
 class PatientAppointmentsAPI(Resource):
     @auth_token_required
@@ -276,6 +267,7 @@ class PatientAppointmentsAPI(Resource):
             treatment = Treatment.query.filter_by(appointment_id=apt.id).first()
             appointments_list.append({
                 'id': apt.id,
+                'doctor_id': apt.doctor_id, # Added doctor_id
                 'doctor_name': apt.doctor.user.username,
                 'department': apt.doctor.department.name,
                 'date': apt.appointment_date.strftime('%Y-%m-%d'),
@@ -302,13 +294,90 @@ class PatientCancelAppointmentAPI(Resource):
         if appointment.status != 'Booked':
             return make_response(jsonify({'message': 'Cannot cancel this appointment'}), 400)
         
+        # Refund Logic
+        payment = Payment.query.filter_by(appointment_id=appointment.id).first()
+        refund_msg = ""
+        
+        if payment and payment.status == 'Success':
+            refund_amount = payment.amount * 0.90
+            # Update payment status to indicate a refund was processed
+            payment.status = 'Refunded'
+            refund_msg = f" ₹{refund_amount} (90%) has been refunded to your original payment method."
+
         appointment.status = 'Cancelled'
         db.session.commit()
         
-        # Invalidate dashboard cache on cancellation
         cache.delete(f'patient_dashboard_{current_user.id}')
         
-        return make_response(jsonify({'message': 'Appointment cancelled successfully'}), 200)
+        return make_response(jsonify({'message': f'Appointment cancelled successfully.{refund_msg}'}), 200)
+
+class PatientRescheduleAppointmentAPI(Resource):
+    @auth_token_required
+    @roles_required('user')
+    def put(self, appointment_id):
+        patient = Patient.query.filter_by(user_id=current_user.id).first()
+        appointment = Appointment.query.get_or_404(appointment_id)
+        
+        if appointment.patient_id != patient.id:
+            return make_response(jsonify({'message': 'Unauthorized'}), 403)
+        
+        if appointment.status not in ['Booked', 'Missed']:
+            return make_response(jsonify({'message': 'Cannot reschedule a completed or cancelled appointment'}), 400)
+        
+        today = datetime.now().date()
+        
+        if appointment.status == 'Booked':
+             cutoff_date = appointment.appointment_date - timedelta(days=1)
+             if today >= cutoff_date:
+                 return make_response(jsonify({'message': 'Cannot reschedule less than 24 hours before the appointment'}), 400)
+
+        data = request.get_json()
+        new_date_str = data.get('date')
+        new_time_str = data.get('time')
+        
+        if not new_date_str or not new_time_str:
+            return make_response(jsonify({'message': 'New date and time required'}), 400)
+            
+        new_date = datetime.strptime(new_date_str, '%Y-%m-%d').date()
+        new_time = datetime.strptime(new_time_str, '%H:%M').time()
+        
+        availability = DoctorAvailability.query.filter_by(
+            doctor_id=appointment.doctor_id,
+            date=new_date
+        ).first()
+        
+        if not availability:
+            return make_response(jsonify({'message': 'Doctor not available on the new date'}), 400)
+            
+        booked_count = Appointment.query.filter_by(
+            doctor_id=appointment.doctor_id,
+            appointment_date=new_date,
+            appointment_time=new_time,
+            status='Booked'
+        ).count()
+        
+        if booked_count >= availability.total_seats:
+            return make_response(jsonify({'message': 'The selected time slot is fully booked'}), 400)
+            
+        existing = Appointment.query.filter(
+            Appointment.patient_id == patient.id,
+            Appointment.appointment_date == new_date,
+            Appointment.id != appointment.id,
+            Appointment.status == 'Booked'
+        ).first()
+        
+        if existing:
+             return make_response(jsonify({'message': 'You already have another appointment on this date'}), 409)
+
+        appointment.appointment_date = new_date
+        appointment.appointment_time = new_time
+        appointment.status = 'Booked'
+        
+        db.session.commit()
+        
+        cache.delete(f'patient_dashboard_{current_user.id}')
+        
+        return make_response(jsonify({'message': 'Appointment rescheduled successfully'}), 200)
 
 class PatientHistoryAPI(Resource):
     @auth_token_required

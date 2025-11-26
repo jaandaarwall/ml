@@ -180,6 +180,12 @@ export const patientAPI = {
       body: JSON.stringify(data)
     }),
 
+  rescheduleAppointment: (appointmentId, data) => 
+    apiCall(`/patient/appointment/${appointmentId}/reschedule`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+
   getAppointments: () => apiCall('/patient/appointments'),
   
   cancelAppointment: (appointmentId) => 
