@@ -68,11 +68,11 @@
           <div class="col-lg-6">
             <div class="card h-100">
               <div class="card-header bg-light">
-                <h5 class="mb-0">Status Distribution</h5>
+                <h5 class="mb-0">💰 Money Spent vs Date</h5>
               </div>
               <div class="card-body">
                 <div class="chart-container">
-                  <canvas ref="chartStatus"></canvas>
+                  <canvas ref="chartMoney"></canvas>
                 </div>
               </div>
             </div>
@@ -95,7 +95,7 @@ const authStore = useAuthStore()
 
 const loading = ref(true)
 const chartMonth = ref(null)
-const chartStatus = ref(null)
+const chartMoney = ref(null)
 
 const handleLogout = async () => {
   try {
@@ -134,17 +134,35 @@ onMounted(async () => {
       })
     }
 
-    if (chartStatus.value) {
-      new Chart(chartStatus.value.getContext('2d'), {
-        type: 'pie',
+    if (chartMoney.value) {
+      new Chart(chartMoney.value.getContext('2d'), {
+        type: 'line',
         data: { 
-          labels: data.status_distribution.labels, 
+          labels: data.money_spent_vs_date.labels, 
           datasets: [{ 
-            data: data.status_distribution.values, 
-            backgroundColor: ['#007bff', '#28a745', '#dc3545'] 
+            label: 'Amount Spent (₹)', 
+            data: data.money_spent_vs_date.values, 
+            backgroundColor: 'rgba(40, 167, 69, 0.2)',
+            borderColor: '#28a745',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3
           }] 
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return '₹' + value;
+                }
+              }
+            }
+          }
+        }
       })
     }
   } catch (error) {
