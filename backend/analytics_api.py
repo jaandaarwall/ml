@@ -131,7 +131,7 @@ class PatientAnalyticsAPI(Resource):
         if not patient:
             return jsonify({"appointments_per_month": {}, "money_spent": {}})
 
-        # Appointments Per Month
+        # Appointments Per Month (Total)
         monthly_data = db.session.query(
             func.strftime('%Y-%m', Appointment.appointment_date),
             func.count(Appointment.id)
@@ -139,8 +139,34 @@ class PatientAnalyticsAPI(Resource):
             Appointment.patient_id == patient.id
         ).group_by(func.strftime('%Y-%m', Appointment.appointment_date)).all()
 
-        month_labels = [row[0] for row in monthly_data]
-        month_values = [row[1] for row in monthly_data]
+        # Cancellations Per Month
+        cancellation_data = db.session.query(
+            func.strftime('%Y-%m', Appointment.appointment_date),
+            func.count(Appointment.id)
+        ).filter(
+            Appointment.patient_id == patient.id,
+            Appointment.status == 'Cancelled'
+        ).group_by(func.strftime('%Y-%m', Appointment.appointment_date)).all()
+
+        # Process and Merge Data
+        data_map = {}
+        
+        # Initialize with total counts
+        for row in monthly_data:
+            data_map[row[0]] = {'total': row[1], 'cancelled': 0}
+            
+        # Add cancellation counts
+        for row in cancellation_data:
+            if row[0] in data_map:
+                data_map[row[0]]['cancelled'] = row[1]
+            else:
+                # Should not happen as cancelled is a subset of total, but safety first
+                data_map[row[0]] = {'total': row[1], 'cancelled': row[1]}
+
+        sorted_months = sorted(data_map.keys())
+        month_labels = sorted_months
+        month_total_values = [data_map[m]['total'] for m in sorted_months]
+        month_cancelled_values = [data_map[m]['cancelled'] for m in sorted_months]
 
         # Money Spent vs Date (Successful Payments Only)
         money_data = db.session.query(
@@ -148,9 +174,6 @@ class PatientAnalyticsAPI(Resource):
             func.sum(Payment.amount)
         ).join(Appointment).filter(
             Appointment.patient_id == patient.id,
-            Payment.status.in_(['Success', 'Refunded']) # Include refunded to show activity, or just Success for net spend. Let's show transaction volume.
-            # Actually, for "Money Spent", let's stick to 'Success' to show actual expenditure.
-        ).filter(
             Payment.status == 'Success'
         ).group_by(func.strftime('%Y-%m-%d', Payment.created_at)).order_by(func.strftime('%Y-%m-%d', Payment.created_at)).all()
 
@@ -160,7 +183,8 @@ class PatientAnalyticsAPI(Resource):
         return jsonify({
             "appointments_per_month": {
                 "labels": month_labels,
-                "values": month_values
+                "total": month_total_values,
+                "cancelled": month_cancelled_values
             },
             "money_spent_vs_date": {
                 "labels": money_labels,

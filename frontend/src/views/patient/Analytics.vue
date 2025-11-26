@@ -56,7 +56,7 @@
           <div class="col-lg-6">
             <div class="card h-100">
               <div class="card-header bg-light">
-                <h5 class="mb-0">Appointments per Month</h5>
+                <h5 class="mb-0">Appointments & Cancellations per Month</h5>
               </div>
               <div class="card-body">
                 <div class="chart-container">
@@ -118,17 +118,34 @@ onMounted(async () => {
         type: 'bar',
         data: { 
           labels: data.appointments_per_month.labels, 
-          datasets: [{ 
-            label: 'Appointments', 
-            data: data.appointments_per_month.values, 
-            backgroundColor: '#007bff' 
-          }] 
+          datasets: [
+            { 
+              label: 'Total Appointments', 
+              data: data.appointments_per_month.total, 
+              backgroundColor: '#007bff',
+              borderColor: '#007bff',
+              borderWidth: 1
+            },
+            { 
+              label: 'Cancelled', 
+              data: data.appointments_per_month.cancelled, 
+              backgroundColor: '#dc3545',
+              borderColor: '#dc3545',
+              borderWidth: 1
+            }
+          ] 
         },
         options: { 
           responsive: true, 
           maintainAspectRatio: false,
           scales: {
             y: { beginAtZero: true, ticks: { stepSize: 1 } }
+          },
+          plugins: {
+            tooltip: {
+              mode: 'index',
+              intersect: false
+            }
           }
         }
       })
