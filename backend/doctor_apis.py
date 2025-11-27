@@ -112,10 +112,7 @@ class DoctorAvailabilityAPI(Resource):
     @roles_required('doctor')
     def get(self):
         doctor = Doctor.query.filter_by(user_id=current_user.id).first_or_404()
-        # Order by date descending to show recent/future availability first (or by ID desc for most recently added)
-        # Interpret "recent set" as "most recently added" -> order by ID desc
-        # Or "dates" -> order by date desc
-        # Let's assume order by date descending is the most logical "recent" view for dates.
+        # availabilities = DoctorAvailability.query.filter_by(doctor_id=doctor.id).all()
         availabilities = DoctorAvailability.query.filter_by(doctor_id=doctor.id).order_by(DoctorAvailability.date.desc()).all()
         
         availability_list = []
