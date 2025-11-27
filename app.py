@@ -121,7 +121,8 @@ def init_db(app):
 from backend.authentication_apis import LoginAPI, LogoutAPI, RegisterAPI, CheckEmailAPI
 from backend.admin_apis import (AdminDashboardAPI, AdminDoctorsAPI, AdminAddDoctorAPI, 
                                 AdminDoctorDetailAPI, AdminPatientsAPI, AdminPatientDetailAPI,
-                                AdminAppointmentsAPI, AdminSearchAPI, DepartmentsAPI,AdminTransactionsAPI)
+                                AdminAppointmentsAPI, AdminSearchAPI, DepartmentsAPI,AdminTransactionsAPI,
+                                AdminDepartmentsAPI, AdminDepartmentDetailAPI)
 from backend.doctor_apis import (DoctorDashboardAPI, DoctorAppointmentsAPI, DoctorPatientsAPI,
                                  DoctorAvailabilityAPI, DoctorCompleteAppointmentAPI, DoctorTreatmentAPI,
                                  DoctorPatientHistoryAPI, DoctorProfileAPI, DoctorAvailabilitySlotAPI)
@@ -145,6 +146,8 @@ api.add_resource(AdminPatientDetailAPI, '/admin/patient/<int:patient_id>')
 api.add_resource(AdminAppointmentsAPI, '/admin/appointments')
 api.add_resource(AdminSearchAPI, '/admin/search')
 api.add_resource(AdminTransactionsAPI, '/admin/transactions')
+api.add_resource(AdminDepartmentsAPI, '/admin/manage-departments')
+api.add_resource(AdminDepartmentDetailAPI, '/admin/department/<int:department_id>')
 
 # Doctor APIs
 api.add_resource(DoctorDashboardAPI, '/doctor/dashboard')

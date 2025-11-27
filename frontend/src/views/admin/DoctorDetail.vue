@@ -1,9 +1,11 @@
-<!-- views/admin/DoctorDetail.vue -->
 <template>
   <div class="container-fluid">
     <div class="page-header d-flex justify-content-between align-items-center">
       <h1>👨‍⚕️ Doctor Details</h1>
-      <RouterLink to="/admin/doctors" class="btn btn-outline-light">Back to Doctors</RouterLink>
+      <div>
+        <button @click="openEditModal" class="btn btn-primary me-2">✏️ Edit Details</button>
+        <RouterLink to="/admin/doctors" class="btn btn-outline-light">Back to Doctors</RouterLink>
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-5">
@@ -110,6 +112,53 @@
       </div>
     </div>
 
+    <!-- Edit Doctor Modal -->
+    <div v-if="showEditModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">Edit Doctor Details</h5>
+            <button type="button" class="btn-close btn-close-white" @click="showEditModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="updateDoctor">
+              <div class="mb-3">
+                <label class="form-label">Name</label>
+                <input v-model="editForm.username" type="text" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input v-model="editForm.email" type="email" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Phone</label>
+                <input v-model="editForm.phone" type="text" class="form-control">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Department</label>
+                <select v-model="editForm.department_id" class="form-select" required>
+                  <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                    {{ dept.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Qualification</label>
+                <input v-model="editForm.qualification" type="text" class="form-control">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Experience (Years)</label>
+                <input v-model.number="editForm.experience_years" type="number" class="form-control">
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Treatment Detail Modal -->
     <div v-if="selectedTreatment" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
@@ -180,7 +229,7 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { adminAPI } from '../../services/api'
+import { adminAPI, departmentsAPI } from '../../services/api'
 import { Chart } from 'chart.js/auto'
 
 const route = useRoute()
@@ -188,11 +237,14 @@ const loading = ref(true)
 const error = ref('')
 const doctor = ref({})
 const appointments = ref([])
+const departments = ref([])
 
 // Modals State
 const selectedTreatment = ref(null)
 const selectedPatient = ref(null)
 const loadingPatient = ref(false)
+const showEditModal = ref(false)
+const editForm = ref({})
 
 // Chart State
 const chartCanvas = ref(null)
@@ -229,12 +281,34 @@ const fetchAndShowPatient = async (patientId) => {
   }
 }
 
+const openEditModal = () => {
+  editForm.value = {
+    username: doctor.value.name,
+    email: doctor.value.email,
+    phone: doctor.value.phone,
+    department_id: doctor.value.department_id,
+    qualification: doctor.value.qualification,
+    experience_years: doctor.value.experience_years
+  }
+  showEditModal.value = true
+}
+
+const updateDoctor = async () => {
+  try {
+    await adminAPI.updateDoctor(route.params.id, editForm.value)
+    alert('Doctor updated successfully')
+    showEditModal.value = false
+    // Refresh data
+    loadData()
+  } catch (err) {
+    alert(err.message || 'Failed to update doctor')
+  }
+}
+
 const processChartData = (appointments) => {
-  // Group appointments by Month-Year
   const monthlyCounts = {}
   const today = new Date()
   
-  // Initialize last 6 months with 0
   for (let i = 5; i >= 0; i--) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
     const key = d.toLocaleString('default', { month: 'short', year: 'numeric' })
@@ -290,15 +364,20 @@ const renderChart = (chartData) => {
   }
 }
 
-onMounted(async () => {
+const loadData = async () => {
   try {
     const response = await adminAPI.getDoctorDetail(route.params.id)
     doctor.value = { ...response.doctor, appointments_count: response.appointments_count }
     appointments.value = response.appointments
     
-    // Prepare chart
     const chartData = processChartData(response.appointments)
     
+    // Load departments for edit modal if needed
+    if (departments.value.length === 0) {
+        const deptResponse = await departmentsAPI.getDepartments()
+        departments.value = deptResponse
+    }
+
     loading.value = false
     await nextTick()
     renderChart(chartData)
@@ -307,7 +386,9 @@ onMounted(async () => {
     error.value = err.message
     loading.value = false
   }
-})
+}
+
+onMounted(loadData)
 </script>
 
 <style scoped>

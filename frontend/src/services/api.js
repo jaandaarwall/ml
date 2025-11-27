@@ -88,6 +88,24 @@ export const adminAPI = {
 
   getTransactions: () => apiCall('/admin/transactions'),
 
+  // Departments Management
+  getDepartmentsManaged: () => apiCall('/admin/manage-departments'),
+
+  addDepartment: (data) =>
+    apiCall('/admin/manage-departments', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
+  updateDepartment: (id, data) =>
+    apiCall(`/admin/department/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+
+  deleteDepartment: (id) =>
+    apiCall(`/admin/department/${id}`, { method: 'DELETE' }),
+
   // Export Tasks
   exportAppointments: (startDate, endDate) => 
     apiCall('/task/export-admin-appointments', {

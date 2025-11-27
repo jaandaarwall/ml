@@ -6,6 +6,7 @@ from .models import *
 from .user_datastore import user_datastore
 from datetime import datetime
 from .cache import cache
+from .mail import send_email
 
 class AdminDashboardAPI(Resource):
     @auth_token_required
@@ -29,7 +30,7 @@ class AdminDoctorsAPI(Resource):
     @auth_token_required
     @roles_required('admin')
     # Cache full doctor list for 5 mins
-    @cache.cached(timeout=300, key_prefix='admin_all_doctors')
+    @cache.cached(timeout=30, key_prefix='admin_all_doctors')
     def get(self):
         doctors = Doctor.query.all()
         doctors_list = []
@@ -40,6 +41,7 @@ class AdminDoctorsAPI(Resource):
                 'email': doc.user.email,
                 'phone': doc.user.phone,
                 'department': doc.department.name,
+                'department_id': doc.department_id,
                 'qualification': doc.qualification,
                 'experience_years': doc.experience_years,
                 'is_active': doc.is_active
@@ -119,6 +121,7 @@ class AdminDoctorDetailAPI(Resource):
                 'email': doctor.user.email,
                 'phone': doctor.user.phone,
                 'department': doctor.department.name,
+                'department_id': doctor.department_id,
                 'qualification': doctor.qualification,
                 'experience_years': doctor.experience_years,
                 'is_active': doctor.is_active
@@ -133,11 +136,15 @@ class AdminDoctorDetailAPI(Resource):
         data = request.get_json()
         doctor = Doctor.query.get_or_404(doctor_id)
         
-        doctor.user.username = data.get('username', doctor.user.username)
-        doctor.user.phone = data.get('phone', doctor.user.phone)
-        doctor.department_id = data.get('department_id', doctor.department_id)
-        doctor.qualification = data.get('qualification', doctor.qualification)
-        doctor.experience_years = data.get('experience_years', doctor.experience_years)
+        # Update User Model Fields
+        if 'username' in data: doctor.user.username = data['username']
+        if 'phone' in data: doctor.user.phone = data['phone']
+        if 'email' in data: doctor.user.email = data['email']
+        
+        # Update Doctor Model Fields
+        if 'department_id' in data: doctor.department_id = int(data['department_id'])
+        if 'qualification' in data: doctor.qualification = data['qualification']
+        if 'experience_years' in data: doctor.experience_years = int(data['experience_years'])
         
         db.session.commit()
         
@@ -151,7 +158,8 @@ class AdminDoctorDetailAPI(Resource):
     def delete(self, doctor_id):
         doctor = Doctor.query.get_or_404(doctor_id)
         doctor.is_active = not doctor.is_active
-        doctor.user.active = doctor.is_active
+        # Also toggle user active status to prevent login if deactivated
+        doctor.user.active = doctor.is_active 
         db.session.commit()
         
         # Refresh Policy: Invalidate stats and lists on status change
@@ -293,7 +301,7 @@ class AdminSearchAPI(Resource):
 
 class DepartmentsAPI(Resource):
     # Cache static departments list for 1 hour
-    @cache.cached(timeout=3600)
+    @cache.cached(timeout=30)
     def get(self):
         departments = Department.query.all()
         dept_list = []
@@ -301,7 +309,8 @@ class DepartmentsAPI(Resource):
             dept_list.append({
                 'id': dept.id,
                 'name': dept.name,
-                'description': dept.description
+                'description': dept.description,
+                'price': dept.price
             })
         return make_response(jsonify(dept_list), 200)
 
@@ -322,3 +331,97 @@ class AdminTransactionsAPI(Resource):
                 'date': pay.created_at.strftime('%Y-%m-%d %H:%M')
             })
         return make_response(jsonify(transactions), 200)
+
+# ----------------------------------------
+# NEW DEPARTMENT MANAGEMENT APIS
+# ----------------------------------------
+
+class AdminDepartmentsAPI(Resource):
+    @auth_token_required
+    @roles_required('admin')
+    def get(self):
+        # Return departments with active doctor count for UI warning
+        departments = Department.query.all()
+        dept_list = []
+        for dept in departments:
+            doc_count = Doctor.query.filter_by(department_id=dept.id, is_active=True).count()
+            dept_list.append({
+                'id': dept.id,
+                'name': dept.name,
+                'description': dept.description,
+                'price': dept.price,
+                'active_doctors_count': doc_count
+            })
+        return make_response(jsonify(dept_list), 200)
+
+    @auth_token_required
+    @roles_required('admin')
+    def post(self):
+        data = request.get_json()
+        if Department.query.filter_by(name=data['name']).first():
+             return make_response(jsonify({'message': 'Department already exists'}), 409)
+        
+        dept = Department(
+            name=data['name'],
+            description=data.get('description'),
+            price=data.get('price', 300.0)
+        )
+        db.session.add(dept)
+        db.session.commit()
+        return make_response(jsonify({'message': 'Department added successfully'}), 201)
+
+class AdminDepartmentDetailAPI(Resource):
+    @auth_token_required
+    @roles_required('admin')
+    def put(self, department_id):
+        dept = Department.query.get_or_404(department_id)
+        data = request.get_json()
+        
+        dept.name = data.get('name', dept.name)
+        dept.description = data.get('description', dept.description)
+        if 'price' in data:
+            dept.price = float(data['price'])
+        
+        db.session.commit()
+        return make_response(jsonify({'message': 'Department updated successfully'}), 200)
+
+    @auth_token_required
+    @roles_required('admin')
+    def delete(self, department_id):
+        dept = Department.query.get_or_404(department_id)
+        
+        # 1. Handle Doctors
+        doctors = Doctor.query.filter_by(department_id=department_id).all()
+        
+        for doc in doctors:
+            if doc.is_active:
+                # Make inactive
+                doc.is_active = False 
+                # Optionally deactivate user login too
+                # doc.user.active = False 
+                
+                # Notify Doctor
+                subject_doc = "Important: Department Closure Notice"
+                body_doc = f"Dear Dr. {doc.user.username},\n\nThis email is to inform you that the '{dept.name}' department is being closed effectively immediately.\n\nYour account has been marked as inactive. Please contact the hospital administration for further details.\n\nBest regards,\nHospital Management"
+                send_email(doc.user.email, subject_doc, body_doc)
+                
+                # 2. Handle Appointments for these doctors
+                future_appointments = Appointment.query.filter(
+                    Appointment.doctor_id == doc.id,
+                    Appointment.status.in_(['Booked', 'Action Pending']),
+                    Appointment.appointment_date >= datetime.now().date()
+                ).all()
+                
+                for apt in future_appointments:
+                    apt.status = 'Cancelled'
+                    
+                    # Notify Patient
+                    subject_pat = "Important: Appointment Cancellation Notice"
+                    body_pat = f"Dear {apt.patient.user.username},\n\nWe regret to inform you that your appointment with Dr. {doc.user.username} on {apt.appointment_date} has been cancelled because the {dept.name} department is no longer available.\n\nWe apologize for the inconvenience caused.\n\nBest regards,\nHospital Management Team"
+                    send_email(apt.patient.user.email, subject_pat, body_pat)
+
+        # 3. Delete Department
+        db.session.delete(dept)
+        db.session.commit()
+        
+        return make_response(jsonify({'message': 'Department deleted. Doctors deactivated and patients notified.'}), 200)

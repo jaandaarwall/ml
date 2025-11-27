@@ -3,7 +3,7 @@
     <!-- Sidebar Navigation -->
     <div class="bg-primary text-white p-4" style="width: 250px; overflow-y: auto;">      
       <nav class="nav flex-column">
-        <RouterLink to="/admin/dashboard" class="nav-link text-white mb-2">
+        <RouterLink to="/admin/dashboard" class="nav-link text-white mb-2 active-nav">
           📊 Dashboard
         </RouterLink>
         <RouterLink to="/admin/doctors" class="nav-link text-white mb-2">
@@ -11,6 +11,9 @@
         </RouterLink>
         <RouterLink to="/admin/patients" class="nav-link text-white mb-2">
           👥 Manage Patients
+        </RouterLink>
+        <RouterLink to="/admin/departments" class="nav-link text-white mb-2">
+          🏥 Manage Departments
         </RouterLink>
         <RouterLink to="/admin/appointments" class="nav-link text-white mb-2">
           📅 All Appointments
@@ -101,8 +104,8 @@
                   </RouterLink>
                 </div>
                 <div class="col-md-3">
-                  <RouterLink to="/admin/appointments" class="btn btn-success w-100">
-                    👁️ View All Appointments
+                  <RouterLink to="/admin/departments" class="btn btn-secondary w-100">
+                    🏥 Manage Depts
                   </RouterLink>
                 </div>
                 <div class="col-md-3">
@@ -315,7 +318,7 @@ onMounted(() => {
   padding-left: 1rem;
 }
 
-.nav-link.router-link-active {
+.nav-link.active-nav {
   background-color: rgba(255, 255, 255, 0.2);
   border-left: 4px solid #ffc107;
   padding-left: 1rem;
