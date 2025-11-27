@@ -144,22 +144,48 @@ class DoctorAvailabilityAPI(Resource):
         doctor = Doctor.query.filter_by(user_id=current_user.id).first_or_404()
         data = request.get_json()
         
-        date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        start_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
         start_time = datetime.strptime(data['start_time'], '%H:%M').time()
         end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+        repeat_days = int(data.get('repeat_days', 0))
         
-        availability = DoctorAvailability(
-            doctor_id=doctor.id,
-            date=date,
-            start_time=start_time,
-            end_time=end_time,
-            total_seats=data.get('total_seats', 10)
-        )
+        count = 0
+        skipped_count = 0
         
-        db.session.add(availability)
+        # Loop to create availability for the initial date + repeat_days
+        for i in range(repeat_days + 1):
+            current_date = start_date + timedelta(days=i)
+            
+            # Check if availability already exists for this date
+            existing_availability = DoctorAvailability.query.filter_by(
+                doctor_id=doctor.id,
+                date=current_date
+            ).first()
+            
+            if existing_availability:
+                skipped_count += 1
+                continue # Skip this date if already set
+
+            availability = DoctorAvailability(
+                doctor_id=doctor.id,
+                date=current_date,
+                start_time=start_time,
+                end_time=end_time,
+                total_seats=data.get('total_seats', 10)
+            )
+            db.session.add(availability)
+            count += 1
+        
         db.session.commit()
         
-        return make_response(jsonify({'message': 'Availability added successfully'}), 201)
+        if count == 0 and skipped_count > 0:
+             return make_response(jsonify({'message': 'Availability already set for all selected dates.'}), 409)
+
+        msg = f'Availability added for {count} days.'
+        if skipped_count > 0:
+            msg += f' Skipped {skipped_count} dates that were already set.'
+            
+        return make_response(jsonify({'message': msg}), 201)
     
     @auth_token_required
     @roles_required('doctor')

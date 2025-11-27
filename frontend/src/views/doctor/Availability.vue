@@ -57,6 +57,28 @@
                     <label class="form-label">Total Seats</label>
                     <input v-model.number="newSlot.total_seats" type="number" class="form-control" value="30">
                   </div>
+                  
+                  <!-- Repeat Option -->
+                  <div class="mb-3 p-3 bg-light rounded border">
+                    <label class="form-label fw-bold">🔁 Repeat Settings</label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-white">For next</span>
+                      <input 
+                        v-model.number="newSlot.repeat_days" 
+                        type="number" 
+                        class="form-control" 
+                        min="0" 
+                        max="30"
+                        placeholder="0"
+                      >
+                      <span class="input-group-text bg-white">days</span>
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                      Leave 0 to add only for the selected date. 
+                      Enter e.g., 5 to create slots for 5 additional days.
+                    </small>
+                  </div>
+
                   <button type="submit" class="btn btn-primary w-100">
                     Add Availability
                   </button>
@@ -144,7 +166,8 @@ const newSlot = ref({
   date: '',
   start_time: '',
   end_time: '',
-  total_seats: 30
+  total_seats: 30,
+  repeat_days: 0
 })
 
 const todayDate = computed(() => {
@@ -174,8 +197,10 @@ const addAvailability = async () => {
   }
   
   try {
-    await doctorAPI.addAvailability(newSlot.value)
-    newSlot.value = { date: '', start_time: '', end_time: '', total_seats: 30 }
+    const res = await doctorAPI.addAvailability(newSlot.value)
+    alert(res.message || 'Availability added successfully')
+    // Reset form
+    newSlot.value = { date: '', start_time: '', end_time: '', total_seats: 30, repeat_days: 0 }
     fetchAvailabilities()
   } catch (err) {
     alert(err.message)
