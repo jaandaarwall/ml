@@ -4,6 +4,7 @@ from flask_security import auth_token_required, roles_required, current_user
 from .Sqldatabase import db
 from .models import *
 from datetime import datetime, timedelta, time as dt_time
+from .mail import send_email
 
 class DoctorDashboardAPI(Resource):
     @auth_token_required
@@ -112,18 +113,27 @@ class DoctorAvailabilityAPI(Resource):
     @roles_required('doctor')
     def get(self):
         doctor = Doctor.query.filter_by(user_id=current_user.id).first_or_404()
-        # availabilities = DoctorAvailability.query.filter_by(doctor_id=doctor.id).all()
         availabilities = DoctorAvailability.query.filter_by(doctor_id=doctor.id).order_by(DoctorAvailability.date.desc()).all()
         
         availability_list = []
         for avail in availabilities:
+            # Count active bookings for this slot to show warning on frontend
+            booking_count = Appointment.query.filter(
+                Appointment.doctor_id == doctor.id,
+                Appointment.appointment_date == avail.date,
+                Appointment.appointment_time >= avail.start_time,
+                Appointment.appointment_time < avail.end_time,
+                Appointment.status == 'Booked'
+            ).count()
+
             availability_list.append({
                 'id': avail.id,
                 'date': avail.date.strftime('%Y-%m-%d'),
                 'start_time': avail.start_time.strftime('%H:%M'),
                 'end_time': avail.end_time.strftime('%H:%M'),
                 'total_seats': avail.total_seats,
-                'is_available': avail.is_available
+                'is_available': avail.is_available,
+                'booking_count': booking_count
             })
         
         return make_response(jsonify(availability_list), 200)
@@ -161,10 +171,43 @@ class DoctorAvailabilityAPI(Resource):
         if availability.doctor_id != doctor.id:
             return make_response(jsonify({'message': 'Unauthorized'}), 403)
         
+        # Find all active bookings in this slot
+        bookings = Appointment.query.filter(
+            Appointment.doctor_id == doctor.id,
+            Appointment.appointment_date == availability.date,
+            Appointment.appointment_time >= availability.start_time,
+            Appointment.appointment_time < availability.end_time,
+            Appointment.status == 'Booked'
+        ).all()
+
+        # Cancel bookings and notify patients
+        for apt in bookings:
+            # Set status to 'Action Pending' so patient knows they need to reschedule
+            apt.status = 'Action Pending'
+            
+            # Send Email
+            subject = "Important: Appointment Cancellation - Action Required"
+            body = f"""Dear {apt.patient.user.username},
+
+Your appointment with Dr. {doctor.user.username} on {apt.appointment_date.strftime('%Y-%m-%d')} at {apt.appointment_time.strftime('%H:%M')} has been cancelled because the doctor is no longer available at that time.
+
+Your appointment status has been set to 'Action Pending'. Please log in to your dashboard to reschedule your appointment.
+
+We apologize for the inconvenience.
+
+Best regards,
+Hospital Management System"""
+            
+            send_email(apt.patient.user.email, subject, body)
+
         db.session.delete(availability)
         db.session.commit()
         
-        return make_response(jsonify({'message': 'Availability deleted successfully'}), 200)
+        message = 'Availability deleted successfully'
+        if bookings:
+            message += f'. {len(bookings)} appointments were set to Action Pending and patients notified.'
+
+        return make_response(jsonify({'message': message}), 200)
 
 class DoctorCompleteAppointmentAPI(Resource):
     @auth_token_required

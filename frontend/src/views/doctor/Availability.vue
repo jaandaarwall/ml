@@ -1,4 +1,3 @@
-<!-- views/doctor/Availability.vue -->
 <template>
   <div class="d-flex" style="min-height: 100vh; background-color: #f8f9fa;">
     <!-- Sidebar -->
@@ -44,7 +43,7 @@
                 <form @submit.prevent="addAvailability">
                   <div class="mb-3">
                     <label class="form-label">Date</label>
-                    <input v-model="newSlot.date" type="date" class="form-control" required>
+                    <input v-model="newSlot.date" type="date" class="form-control" :min="todayDate" required>
                   </div>
                   <div class="mb-3">
                     <label class="form-label">Start Time</label>
@@ -89,19 +88,34 @@
                         <th>Start Time</th>
                         <th>End Time</th>
                         <th>Seats</th>
+                        <th>Bookings</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="avail in availabilities" :key="avail.id">
-                        <td><strong>{{ avail.date }}</strong></td>
+                        <td>
+                          <strong>{{ avail.date }}</strong>
+                          <span v-if="isPast(avail.date)" class="badge bg-secondary ms-2">Past</span>
+                        </td>
                         <td>{{ avail.start_time }}</td>
                         <td>{{ avail.end_time }}</td>
                         <td>{{ avail.total_seats }}</td>
                         <td>
-                          <button @click="deleteAvailability(avail.id)" class="btn btn-sm btn-danger">
+                          <span :class="['badge', avail.booking_count > 0 ? 'bg-info' : 'bg-light text-dark border']">
+                            {{ avail.booking_count }} Active
+                          </span>
+                        </td>
+                        <td>
+                          <!-- Only show delete if date is not in the past -->
+                          <button 
+                            v-if="!isPast(avail.date)" 
+                            @click="deleteAvailability(avail)" 
+                            class="btn btn-sm btn-danger"
+                          >
                             🗑️
                           </button>
+                          <span v-else class="text-muted small">Locked</span>
                         </td>
                       </tr>
                     </tbody>
@@ -117,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { doctorAPI } from '../../services/api'
@@ -133,6 +147,17 @@ const newSlot = ref({
   total_seats: 30
 })
 
+const todayDate = computed(() => {
+  return new Date().toISOString().split('T')[0]
+})
+
+const isPast = (dateStr) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const checkDate = new Date(dateStr)
+  return checkDate < today
+}
+
 const fetchAvailabilities = async () => {
   try {
     const response = await doctorAPI.getAvailability()
@@ -143,6 +168,11 @@ const fetchAvailabilities = async () => {
 }
 
 const addAvailability = async () => {
+  if (isPast(newSlot.value.date)) {
+    alert('Cannot add availability for past dates.')
+    return
+  }
+  
   try {
     await doctorAPI.addAvailability(newSlot.value)
     newSlot.value = { date: '', start_time: '', end_time: '', total_seats: 30 }
@@ -152,23 +182,22 @@ const addAvailability = async () => {
   }
 }
 
-const deleteAvailability = async (id) => {
-  if (confirm('Delete this availability slot?')) {
+const deleteAvailability = async (avail) => {
+  let message = 'Delete this availability slot?'
+  
+  // Warning if bookings exist
+  if (avail.booking_count > 0) {
+    message = `⚠️ WARNING: There are ${avail.booking_count} active booking(s) for this slot.\n\nDeleting this availability will CANCEL all these appointments and notify the patients via email.\n\nAre you sure you want to proceed?`
+  }
+
+  if (confirm(message)) {
     try {
-      await doctorAPI.deleteAvailability(id)
+      await doctorAPI.deleteAvailability(avail.id)
+      alert('Availability deleted successfully.')
       fetchAvailabilities()
     } catch (err) {
       alert(err.message)
     }
-  }
-}
-
-const handleLogout = async () => {
-  try {
-    await authStore.logout()
-    router.push('/login')
-  } catch (error) {
-    console.error('Logout error:', error)
   }
 }
 
@@ -187,4 +216,3 @@ onMounted(fetchAvailabilities)
   border-radius: 4px;
 }
 </style>
-

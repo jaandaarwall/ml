@@ -52,21 +52,21 @@ def check_missed_appointments():
     
     count = 0
     for apt in missed_appointments:
-        # Update status to Missed
-        apt.status = 'Missed'
+        # Update status to Action Pending (was Missed)
+        apt.status = 'Action Pending'
         db.session.add(apt)
         
         # Send Email
         patient_email = apt.patient.user.email
         doctor_name = apt.doctor.user.username
         
-        subject = "Missed Appointment - Action Required"
+        subject = "Appointment Missed - Action Required"
         body = f"""Hello {apt.patient.user.username},
 
 It seems you missed your appointment today with Dr. {doctor_name}.
 
-Don't worry! You can easily reschedule this appointment from your dashboard.
-Please login to the portal and go to 'My Appointments' to pick a new time.
+Your appointment status has been updated to 'Action Pending'.
+Please login to the portal and go to 'My Appointments' to reschedule this appointment.
 
 Best regards,
 Hospital Management Team"""
@@ -75,7 +75,7 @@ Hospital Management Team"""
         count += 1
     
     db.session.commit()
-    return {"message": f"Marked {count} appointments as missed", "count": count}
+    return {"message": f"Marked {count} appointments as Action Pending", "count": count}
 
 @shared_task(ignore_results=False, name="Monthly doctor activity report")
 def send_monthly_reports():

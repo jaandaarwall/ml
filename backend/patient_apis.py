@@ -21,9 +21,10 @@ class PatientDashboardAPI(Resource):
             db.session.add(patient)
             db.session.commit()
         
+        # Include 'Action Pending' in upcoming/actionable appointments
         upcoming_appointments = Appointment.query.filter(
             Appointment.patient_id == patient.id,
-            Appointment.status.in_(['Booked', 'Missed'])
+            Appointment.status.in_(['Booked', 'Action Pending'])
         ).order_by(Appointment.appointment_date).all()
         
         past_appointments = Appointment.query.filter(
@@ -34,7 +35,8 @@ class PatientDashboardAPI(Resource):
         upcoming_list = []
         today = datetime.now().date()
         for apt in upcoming_appointments:
-            if apt.status == 'Missed' or (apt.status == 'Booked' and apt.appointment_date >= today):
+            # Show Action Pending regardless of date, show Booked if today or future
+            if apt.status == 'Action Pending' or (apt.status == 'Booked' and apt.appointment_date >= today):
                 upcoming_list.append({
                     'id': apt.id,
                     'doctor_id': apt.doctor_id,
@@ -292,7 +294,8 @@ class PatientCancelAppointmentAPI(Resource):
         if appointment.patient_id != patient.id:
             return make_response(jsonify({'message': 'Unauthorized'}), 403)
         
-        if appointment.status != 'Booked':
+        # Allow cancelling Booked or Action Pending appointments
+        if appointment.status not in ['Booked', 'Action Pending']:
             return make_response(jsonify({'message': 'Cannot cancel this appointment'}), 400)
         
         # Refund Logic
@@ -336,7 +339,8 @@ class PatientRescheduleAppointmentAPI(Resource):
         if appointment.patient_id != patient.id:
             return make_response(jsonify({'message': 'Unauthorized'}), 403)
         
-        if appointment.status not in ['Booked', 'Missed']:
+        # Allow rescheduling for 'Booked' (standard) and 'Action Pending' (missed/doctor cancelled)
+        if appointment.status not in ['Booked', 'Action Pending']:
             return make_response(jsonify({'message': 'Cannot reschedule a completed or cancelled appointment'}), 400)
         
         today = datetime.now().date()
