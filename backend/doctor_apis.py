@@ -62,9 +62,19 @@ class DoctorAppointmentsAPI(Resource):
     @roles_required('doctor')
     def get(self):
         doctor = Doctor.query.filter_by(user_id=current_user.id).first_or_404()
-        appointments = Appointment.query.filter_by(doctor_id=doctor.id).order_by(
-            Appointment.appointment_date.desc()
-        ).all()
+        
+        # Allow filtering by date if provided
+        date_str = request.args.get('date')
+        query = Appointment.query.filter_by(doctor_id=doctor.id)
+        
+        if date_str:
+            try:
+                query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                query = query.filter_by(appointment_date=query_date)
+            except ValueError:
+                pass # Ignore invalid date format
+
+        appointments = query.order_by(Appointment.appointment_date.desc()).all()
         
         appointments_list = []
         for apt in appointments:
@@ -234,6 +244,101 @@ Hospital Management System"""
             message += f'. {len(bookings)} appointments were set to Action Pending and patients notified.'
 
         return make_response(jsonify({'message': message}), 200)
+
+
+class DoctorAvailabilitySlotAPI(Resource):
+    @auth_token_required
+    @roles_required('doctor')
+    def delete(self, availability_id):
+        doctor = Doctor.query.filter_by(user_id=current_user.id).first_or_404()
+        availability = DoctorAvailability.query.filter_by(id=availability_id, doctor_id=doctor.id).first_or_404()
+        
+        slot_time_str = request.args.get('time')
+        if not slot_time_str:
+            return make_response(jsonify({'message': 'Time parameter is required'}), 400)
+            
+        try:
+            slot_start = datetime.strptime(slot_time_str, '%H:%M').time()
+        except ValueError:
+            return make_response(jsonify({'message': 'Invalid time format'}), 400)
+
+        # Calculate datetime objects for arithmetic logic
+        dummy_date = datetime(2000, 1, 1).date()
+        dt_start = datetime.combine(dummy_date, availability.start_time)
+        dt_end = datetime.combine(dummy_date, availability.end_time)
+        dt_slot_start = datetime.combine(dummy_date, slot_start)
+        dt_slot_end = dt_slot_start + timedelta(minutes=30)
+        
+        # Validation: Slot must be within range
+        if dt_slot_start < dt_start or dt_slot_end > dt_end:
+             return make_response(jsonify({'message': 'Invalid slot time provided'}), 400)
+
+        # 1. Handle Bookings for this specific slot
+        bookings = Appointment.query.filter_by(
+            doctor_id=doctor.id,
+            appointment_date=availability.date,
+            appointment_time=slot_start,
+            status='Booked'
+        ).all()
+        
+        bookings_count = len(bookings)
+
+        for apt in bookings:
+            apt.status = 'Action Pending'
+            subject = "Important: Appointment Cancellation - Action Required"
+            body = f"""Dear {apt.patient.user.username},
+
+Your appointment with Dr. {doctor.user.username} on {apt.appointment_date.strftime('%Y-%m-%d')} at {apt.appointment_time.strftime('%H:%M')} has been cancelled because the specific time slot was removed.
+
+Your appointment status has been updated to 'Action Pending'. Please log in to your dashboard to reschedule.
+
+We apologize for the inconvenience.
+
+Best regards,
+Hospital Management Team"""
+            send_email(apt.patient.user.email, subject, body)
+
+        # 2. Adjust Availability (Split or Shrink)
+        
+        # Case A: Deleting the very first slot of the range
+        if dt_slot_start == dt_start:
+            if dt_slot_end == dt_end:
+                # It was the only slot in the range, delete the whole record
+                db.session.delete(availability)
+            else:
+                # Shrink range from the start
+                availability.start_time = dt_slot_end.time()
+                
+        # Case B: Deleting the very last slot of the range
+        elif dt_slot_end == dt_end:
+            # Shrink range from the end
+            availability.end_time = slot_start
+            
+        # Case C: Deleting a slot in the middle (Split into two records)
+        else:
+            # Original record becomes the left part [start, slot_start]
+            original_end = availability.end_time
+            availability.end_time = slot_start
+            
+            # Create new record for the right part [slot_end, original_end]
+            new_avail = DoctorAvailability(
+                doctor_id=doctor.id,
+                date=availability.date,
+                start_time=dt_slot_end.time(),
+                end_time=original_end,
+                total_seats=availability.total_seats,
+                is_available=availability.is_available
+            )
+            db.session.add(new_avail)
+
+        db.session.commit()
+        
+        msg = 'Slot removed successfully'
+        if bookings_count > 0:
+            msg += f'. {bookings_count} appointments cancelled and patients notified.'
+            
+        return make_response(jsonify({'message': msg}), 200)
+
 
 class DoctorCompleteAppointmentAPI(Resource):
     @auth_token_required

@@ -129,14 +129,20 @@
                           </span>
                         </td>
                         <td>
-                          <!-- Only show delete if date is not in the past -->
-                          <button 
-                            v-if="!isPast(avail.date)" 
-                            @click="deleteAvailability(avail)" 
-                            class="btn btn-sm btn-danger"
-                          >
-                            🗑️
-                          </button>
+                          <div v-if="!isPast(avail.date)" class="btn-group">
+                            <button 
+                              @click="openSlotsModal(avail)" 
+                              class="btn btn-sm btn-outline-primary"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button 
+                              @click="deleteAvailability(avail)" 
+                              class="btn btn-sm btn-danger"
+                            >
+                              🗑️
+                            </button>
+                          </div>
                           <span v-else class="text-muted small">Locked</span>
                         </td>
                       </tr>
@@ -149,6 +155,44 @@
         </div>
       </div>
     </div>
+
+    <!-- Slots Modal -->
+    <div v-if="showSlotsModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">Manage Slots for {{ selectedAvail?.date }}</h5>
+            <button type="button" class="btn-close btn-close-white" @click="showSlotsModal = false"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="loadingSlots" class="text-center py-3">
+              <div class="spinner-border text-primary"></div>
+            </div>
+            <div v-else>
+               <p class="text-muted mb-3">You can delete individual 30-minute slots below. If a slot has a booking, the patient will be notified.</p>
+               <div class="list-group">
+                  <div v-for="slot in generatedSlots" :key="slot.time" 
+                       class="list-group-item d-flex justify-content-between align-items-center">
+                     <div>
+                        <strong>{{ slot.time }}</strong> - {{ slot.endTime }}
+                        <span v-if="slot.hasBooking" class="badge bg-warning text-dark ms-2">
+                           ⚠️ Booked
+                        </span>
+                     </div>
+                     <button @click="deleteSlot(slot)" class="btn btn-sm btn-outline-danger">
+                        Delete Slot
+                     </button>
+                  </div>
+               </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showSlotsModal = false">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -169,6 +213,12 @@ const newSlot = ref({
   total_seats: 30,
   repeat_days: 0
 })
+
+// Slots Management State
+const showSlotsModal = ref(false)
+const selectedAvail = ref(null)
+const generatedSlots = ref([])
+const loadingSlots = ref(false)
 
 const todayDate = computed(() => {
   return new Date().toISOString().split('T')[0]
@@ -226,6 +276,72 @@ const deleteAvailability = async (avail) => {
   }
 }
 
+// --- Slots Logic ---
+
+const openSlotsModal = async (avail) => {
+  selectedAvail.value = avail
+  showSlotsModal.value = true
+  loadingSlots.value = true
+  generatedSlots.value = []
+
+  try {
+    // 1. Fetch appointments for this date to check bookings
+    // Updated getAppointments API to support ?date= parameter
+    const appointments = await doctorAPI.getAppointments(avail.date)
+    
+    // 2. Generate 30-min slots from start_time to end_time
+    const slots = []
+    let current = new Date(`2000-01-01T${avail.start_time}`)
+    const end = new Date(`2000-01-01T${avail.end_time}`)
+
+    while (current < end) {
+      const timeStr = current.toTimeString().substring(0, 5) // "09:00"
+      
+      // Calculate next slot time
+      current.setMinutes(current.getMinutes() + 30)
+      const endTimeStr = current.toTimeString().substring(0, 5)
+
+      // Check if booked
+      const isBooked = appointments.some(apt => 
+        apt.time === timeStr && apt.status === 'Booked'
+      )
+
+      slots.push({
+        time: timeStr,
+        endTime: endTimeStr,
+        hasBooking: isBooked
+      })
+    }
+    generatedSlots.value = slots
+
+  } catch (err) {
+    console.error("Error loading slots:", err)
+    alert("Failed to load slot details.")
+    showSlotsModal.value = false
+  } finally {
+    loadingSlots.value = false
+  }
+}
+
+const deleteSlot = async (slot) => {
+    let message = `Delete the slot ${slot.time} - ${slot.endTime}?`
+    
+    if (slot.hasBooking) {
+        message = `⚠️ WARNING: This slot is currently BOOKED.\n\nDeleting it will cancel the appointment and send an email notification to the patient.\n\nAre you sure you want to delete this slot?`
+    }
+    
+    if (confirm(message)) {
+        try {
+            await doctorAPI.deleteAvailabilitySlot(selectedAvail.value.id, slot.time)
+            alert('Slot removed successfully.')
+            showSlotsModal.value = false // Close to refresh state
+            fetchAvailabilities() // Refresh main list
+        } catch (err) {
+            alert(err.message || "Failed to delete slot")
+        }
+    }
+}
+
 onMounted(fetchAvailabilities)
 </script>
 
@@ -239,5 +355,9 @@ onMounted(fetchAvailabilities)
 .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
+}
+
+.modal.d-block {
+  display: block !important;
 }
 </style>

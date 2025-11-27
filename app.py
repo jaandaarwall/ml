@@ -124,7 +124,7 @@ from backend.admin_apis import (AdminDashboardAPI, AdminDoctorsAPI, AdminAddDoct
                                 AdminAppointmentsAPI, AdminSearchAPI, DepartmentsAPI,AdminTransactionsAPI)
 from backend.doctor_apis import (DoctorDashboardAPI, DoctorAppointmentsAPI, DoctorPatientsAPI,
                                  DoctorAvailabilityAPI, DoctorCompleteAppointmentAPI, DoctorTreatmentAPI,
-                                 DoctorPatientHistoryAPI, DoctorProfileAPI)
+                                 DoctorPatientHistoryAPI, DoctorProfileAPI, DoctorAvailabilitySlotAPI)
 from backend.patient_apis import (PatientDashboardAPI, PatientDoctorsAPI, PatientDoctorAvailabilityAPI,
                                   PatientBookAppointmentAPI, PatientAppointmentsAPI, PatientCancelAppointmentAPI,
                                   PatientHistoryAPI, PatientProfileAPI, PatientAvailableDatesAPI, PatientRescheduleAppointmentAPI)
@@ -151,6 +151,7 @@ api.add_resource(DoctorDashboardAPI, '/doctor/dashboard')
 api.add_resource(DoctorAppointmentsAPI, '/doctor/appointments')
 api.add_resource(DoctorPatientsAPI, '/doctor/patients')
 api.add_resource(DoctorAvailabilityAPI, '/doctor/availability')
+api.add_resource(DoctorAvailabilitySlotAPI, '/doctor/availability/<int:availability_id>/slot')
 api.add_resource(DoctorCompleteAppointmentAPI, '/doctor/appointment/<int:appointment_id>/complete')
 api.add_resource(DoctorTreatmentAPI, '/doctor/appointment/<int:appointment_id>/treatment')
 api.add_resource(DoctorPatientHistoryAPI, '/doctor/patient/<int:patient_id>/history')

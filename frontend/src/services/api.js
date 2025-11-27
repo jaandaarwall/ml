@@ -108,7 +108,11 @@ export const adminAPI = {
 export const doctorAPI = {
   getDashboard: () => apiCall('/doctor/dashboard'),
   
-  getAppointments: () => apiCall('/doctor/appointments'),
+  getAppointments: (date = null) => {
+      let url = '/doctor/appointments'
+      if (date) url += `?date=${date}`
+      return apiCall(url)
+  },
   
   getPatients: () => apiCall('/doctor/patients'),
   
@@ -122,6 +126,9 @@ export const doctorAPI = {
 
   deleteAvailability: (availabilityId) => 
     apiCall(`/doctor/availability?id=${availabilityId}`, { method: 'DELETE' }),
+  
+  deleteAvailabilitySlot: (availabilityId, time) =>
+    apiCall(`/doctor/availability/${availabilityId}/slot?time=${time}`, { method: 'DELETE' }),
 
   completeAppointment: (appointmentId) => 
     apiCall(`/doctor/appointment/${appointmentId}/complete`, { method: 'POST' }),
