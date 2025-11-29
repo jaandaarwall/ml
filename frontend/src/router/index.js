@@ -1,9 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-// Auth Views
+// Public Views
+import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
+import ForgotPassword from '../views/ForgotPassword.vue'
+
+// Protected Views
 import Payment from '../views/Payment.vue'
 
 // Admin Views
@@ -15,7 +19,7 @@ import AdminPatientDetail from '../views/admin/PatientDetail.vue'
 import AdminAppointments from '../views/admin/Appointments.vue'
 import AdminAnalytics from '../views/admin/Analytics.vue'
 import AdminTransactions from '../views/admin/Transactions.vue'
-import AdminDepartments from '../views/admin/Departments.vue' // New Import
+import AdminDepartments from '../views/admin/Departments.vue'
 
 // Doctor Views
 import DoctorDashboard from '../views/doctor/Dashboard.vue'
@@ -36,10 +40,14 @@ import PatientProfile from '../views/patient/Profile.vue'
 import PatientAnalytics from '../views/patient/Analytics.vue'
 
 const routes = [
+  { path: '/', name: 'Home', component: Home, meta: { requiresAuth: false } },
   { path: '/login', name: 'Login', component: Login, meta: { requiresAuth: false } },
   { path: '/register', name: 'Register', component: Register, meta: { requiresAuth: false } },
+  { path: '/forgot-password', name: 'ForgotPassword', component: ForgotPassword, meta: { requiresAuth: false } },
+  
   { path: '/payment/:paymentId', name: 'Payment', component: Payment, meta: { requiresAuth: true } },
 
+  // Admin Routes
   {
     path: '/admin',
     meta: { requiresAuth: true, requiresRole: 'admin' },
@@ -52,10 +60,11 @@ const routes = [
       { path: 'appointments', name: 'AdminAppointments', component: AdminAppointments },
       { path: 'analytics', name: 'AdminAnalytics', component: AdminAnalytics },
       { path: 'transactions', name: 'AdminTransactions', component: AdminTransactions },
-      { path: 'departments', name: 'AdminDepartments', component: AdminDepartments } // New Route
+      { path: 'departments', name: 'AdminDepartments', component: AdminDepartments }
     ]
   },
 
+  // Doctor Routes
   {
     path: '/doctor',
     meta: { requiresAuth: true, requiresRole: 'doctor' },
@@ -71,6 +80,7 @@ const routes = [
     ]
   },
 
+  // Patient Routes
   {
     path: '/patient',
     meta: { requiresAuth: true, requiresRole: 'user' },
@@ -85,7 +95,7 @@ const routes = [
     ]
   },
 
-  { path: '/', redirect: '/login' },
+  // Fallback
   { path: '/:pathMatch(.*)*', redirect: '/login' }
 ]
 
@@ -97,6 +107,16 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
+  // Redirect authenticated users from public pages to their dashboard
+  if (authStore.isAuthenticated && (to.name === 'Login' || to.name === 'Register' || to.name === 'Home' || to.name === 'ForgotPassword')) {
+    if (to.name !== 'Home') { // Allow visiting home but maybe optional? Usually dashboards are home for auth users.
+        if (authStore.isAdmin) next('/admin/dashboard')
+        else if (authStore.isDoctor) next('/doctor/dashboard')
+        else next('/patient/dashboard')
+        return
+    }
+  }
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
     return
@@ -106,16 +126,7 @@ router.beforeEach((to, from, next) => {
     if (authStore.hasRole(to.meta.requiresRole)) {
       next()
     } else {
-      next('/login')
-    }
-  } else if (to.meta.requiresAuth === false && authStore.isAuthenticated) {
-    // Redirect authenticated users away from login/register
-    if (to.name === 'Login' || to.name === 'Register') {
-      if (authStore.isAdmin) next('/admin/dashboard')
-      else if (authStore.isDoctor) next('/doctor/dashboard')
-      else next('/patient/dashboard')
-    } else {
-      next()
+      next('/login') // Or 403 page
     }
   } else {
     next()

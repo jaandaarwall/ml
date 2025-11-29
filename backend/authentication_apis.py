@@ -1,10 +1,13 @@
 from flask_restful import Resource
 from flask import request, jsonify, make_response
 from flask_security import utils, auth_token_required , roles_required
+import string
+import secrets
 
 from .user_datastore import user_datastore
 from .Sqldatabase import db
 from .models import Patient
+from .mail import send_email
 
 class CheckEmailAPI(Resource):
     def post(self):
@@ -147,3 +150,47 @@ class RegisterAPI(Resource):
             }
         }
         return make_response(jsonify(response), 201)
+
+class ForgotPasswordAPI(Resource):
+    def post(self):
+        data = request.get_json()
+        email = data.get('email')
+        
+        if not email:
+             return make_response(jsonify({'message': 'Email is required'}), 400)
+             
+        user = user_datastore.find_user(email=email)
+        
+        if user:
+            # Generate a secure temporary password
+            alphabet = string.ascii_letters + string.digits
+            temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
+            
+            # Update user's password in the database
+            user.password = utils.hash_password(temp_password)
+            db.session.commit()
+
+            subject = "Temporary Password for HMS Account"
+            body = f"""Hello {user.username},
+            
+We received a request to reset your password.
+
+Your Temporary Password is: {temp_password}
+
+Please use this password to login immediately. We strongly recommend changing your password after logging in.
+
+Best regards,
+Hospital Management Team
+            """
+            
+            # Send email
+            try:
+                send_email(user.email, subject, body)
+                # For development/demo purposes, we also print it to the console
+                print(f"DEBUG: Temporary password for {user.email} is: {temp_password}")
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+                return make_response(jsonify({'message': 'Failed to send email. Please try again later.'}), 500)
+        
+        # Return success message
+        return make_response(jsonify({'message': f'A temporary password has been sent to {email}. Please check your inbox (and spam folder).'}), 200)

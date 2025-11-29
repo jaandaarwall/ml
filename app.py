@@ -118,7 +118,7 @@ def init_db(app):
                 db.session.commit()
 
 
-from backend.authentication_apis import LoginAPI, LogoutAPI, RegisterAPI, CheckEmailAPI
+from backend.authentication_apis import LoginAPI, LogoutAPI, RegisterAPI, CheckEmailAPI, ForgotPasswordAPI
 from backend.admin_apis import (AdminDashboardAPI, AdminDoctorsAPI, AdminAddDoctorAPI, 
                                 AdminDoctorDetailAPI, AdminPatientsAPI, AdminPatientDetailAPI,
                                 AdminAppointmentsAPI, AdminSearchAPI, DepartmentsAPI,AdminTransactionsAPI,
@@ -135,6 +135,7 @@ api.add_resource(LoginAPI, '/login')
 api.add_resource(LogoutAPI, '/logout')
 api.add_resource(RegisterAPI, '/register')
 api.add_resource(CheckEmailAPI, '/check-email')
+api.add_resource(ForgotPasswordAPI, '/forgot-password')
 
 # Admin APIs
 api.add_resource(AdminDashboardAPI, '/admin/dashboard')

@@ -47,6 +47,12 @@ export const authAPI = {
     apiCall('/check-email', {
       method: 'POST',
       body: JSON.stringify({ email })
+    }),
+
+  forgotPassword: (email) => 
+    apiCall('/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
     })
 }
 

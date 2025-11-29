@@ -48,7 +48,7 @@
               >
             </div>
 
-            <div class="mb-4">
+            <div class="mb-2">
               <label class="form-label fw-bold text-secondary small">PASSWORD</label>
               <input 
                 type="password" 
@@ -57,6 +57,12 @@
                 placeholder="••••••••"
                 required
               >
+            </div>
+            
+            <div class="d-flex justify-content-end mb-4">
+              <RouterLink to="/forgot-password" class="text-decoration-none small text-muted fw-bold">
+                Forgot Password?
+              </RouterLink>
             </div>
 
             <button 
@@ -74,6 +80,10 @@
             <p class="text-center text-muted">
               Don't have an account? 
               <RouterLink to="/register" class="text-primary fw-bold text-decoration-none">Sign up</RouterLink>
+            </p>
+            
+            <p class="text-center mt-2">
+              <RouterLink to="/" class="text-secondary small text-decoration-none">← Back to Home</RouterLink>
             </p>
           </form>
 
