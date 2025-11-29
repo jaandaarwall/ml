@@ -1,28 +1,5 @@
 <template>
   <div class="d-flex" style="height: 100vh;">
-    <div class="bg-primary text-white p-4" style="width: 250px; overflow-y: auto;">
-      <nav class="nav flex-column">
-        <RouterLink to="/admin/dashboard" class="nav-link text-white mb-2">
-          📊 Dashboard
-        </RouterLink>
-        <RouterLink to="/admin/doctors" class="nav-link text-white mb-2">
-          👨‍⚕️ Manage Doctors
-        </RouterLink>
-        <RouterLink to="/admin/patients" class="nav-link text-white mb-2">
-          👥 Manage Patients
-        </RouterLink>
-        <RouterLink to="/admin/appointments" class="nav-link text-white mb-2 active-nav">
-          📅 All Appointments
-        </RouterLink>
-        <RouterLink to="/admin/transactions" class="nav-link text-white mb-2">
-          💰 Transactions
-        </RouterLink>
-        <RouterLink to="/admin/analytics" class="nav-link text-white mb-2">
-          📈 Reports
-        </RouterLink>
-      </nav>
-    </div>
-
     <div class="flex-grow-1 d-flex flex-column overflow-auto">
       <div class="bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
         <div>

@@ -1,28 +1,6 @@
 <!-- views/admin/Search.vue -->
 <template>
   <div class="d-flex" style="height: 100vh;">
-    <!-- Sidebar Navigation -->
-    <div class="bg-primary text-white p-4" style="width: 250px; overflow-y: auto;">
-      <h4 class="text-center mb-4 fw-bold">🏥 HMS</h4>
-      
-      <nav class="nav flex-column">
-        <RouterLink to="/admin/dashboard" class="nav-link text-white mb-2">
-          📊 Dashboard
-        </RouterLink>
-        <RouterLink to="/admin/doctors" class="nav-link text-white mb-2">
-          👨‍⚕️ Manage Doctors
-        </RouterLink>
-        <RouterLink to="/admin/patients" class="nav-link text-white mb-2">
-          👥 Manage Patients
-        </RouterLink>
-        <RouterLink to="/admin/appointments" class="nav-link text-white mb-2">
-          📅 All Appointments
-        </RouterLink>
-        <RouterLink to="/admin/analytics" class="nav-link text-white mb-2">
-          📈 Reports
-        </RouterLink>
-      </nav>
-
       <div class="mt-5 pt-3 border-top border-light">
         <button @click="handleLogout" class="btn btn-outline-light w-100">
           🚪 Logout

@@ -1,78 +1,85 @@
 <template>
-  <div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-md-5">
-          <div class="card shadow-lg" style="border-radius: 12px;">
-            <div class="card-body p-5">
-              <div class="text-center mb-4">
-                <h1 class="display-6 text-primary">🏥</h1>
-                <h2 class="card-title mb-1">Hospital Management System</h2>
-                <p class="text-muted">Sign in to your account</p>
-              </div>
+  <div class="login-container">
+    <div class="row g-0 h-100">
+      <!-- Left Side - Image & Brand -->
+      <div class="col-lg-6 d-none d-lg-flex flex-column align-items-center justify-content-center bg-primary text-white p-5 position-relative overflow-hidden">
+        <div class="bg-overlay"></div>
+        <div class="position-relative z-1 text-center">
+          <div class="mb-4 display-1">🏥</div>
+          <h1 class="fw-bold mb-3">We Care About You</h1>
+          <p class="lead mb-4">Streamline your hospital experience with our advanced management system.</p>
+        </div>
+        <!-- Decorative Circles -->
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+      </div>
 
-              <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ errorMessage }}
-                <button type="button" class="btn-close" @click="errorMessage = ''"></button>
-              </div>
+      <!-- Right Side - Form -->
+      <div class="col-lg-6 d-flex align-items-center justify-content-center bg-white">
+        <div class="login-form-wrapper p-5 w-100">
+          <div class="text-center mb-5 d-lg-none">
+            <h1 class="text-primary">🏥 HMS</h1>
+          </div>
+          
+          <div class="mb-4">
+            <h2 class="fw-bold text-dark">Welcome Back!</h2>
+            <p class="text-muted">Please enter your details to sign in.</p>
+          </div>
 
-              <div v-if="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ successMessage }}
-                <button type="button" class="btn-close" @click="successMessage = ''"></button>
-              </div>
+          <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ errorMessage }}
+            <button type="button" class="btn-close" @click="errorMessage = ''"></button>
+          </div>
 
-              <form @submit.prevent="handleLogin">
-                <div class="mb-3">
-                  <label for="email" class="form-label">Email Address</label>
-                  <input 
-                    type="email" 
-                    class="form-control" 
-                    id="email" 
-                    v-model="credentials.email"
-                    placeholder="Enter your email"
-                    required
-                  >
-                </div>
+          <div v-if="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ successMessage }}
+            <button type="button" class="btn-close" @click="successMessage = ''"></button>
+          </div>
 
-                <div class="mb-3">
-                  <label for="password" class="form-label">Password</label>
-                  <input 
-                    type="password" 
-                    class="form-control" 
-                    id="password" 
-                    v-model="credentials.password"
-                    placeholder="Enter your password"
-                    required
-                  >
-                </div>
-
-                <button 
-                  type="submit" 
-                  class="btn btn-primary w-100 py-2 fw-bold mb-3"
-                  :disabled="isLoading"
-                >
-                  <span v-if="!isLoading">Sign In</span>
-                  <span v-else>
-                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Signing in...
-                  </span>
-                </button>
-              </form>
-
-              <hr class="my-4">
-
-              <p class="text-center text-muted">
-                Don't have an account?
-                <RouterLink to="/register" class="text-primary fw-bold text-decoration-none">
-                  Sign up here
-                </RouterLink>
-              </p>
-
-              <div class="mt-4 p-3" style="background-color: #f8f9fa; border-radius: 8px;">
-                <p class="text-muted small mb-2"><strong>Demo Credentials:</strong></p>
-                <p class="text-muted small mb-1">Admin: admin@hospital.com / admin123</p>
-              </div>
+          <form @submit.prevent="handleLogin">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-secondary small">EMAIL ADDRESS</label>
+              <input 
+                type="email" 
+                class="form-control form-control-lg" 
+                v-model="credentials.email"
+                placeholder="name@example.com"
+                required
+              >
             </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-bold text-secondary small">PASSWORD</label>
+              <input 
+                type="password" 
+                class="form-control form-control-lg" 
+                v-model="credentials.password"
+                placeholder="••••••••"
+                required
+              >
+            </div>
+
+            <button 
+              type="submit" 
+              class="btn btn-primary w-100 btn-lg mb-4"
+              :disabled="isLoading"
+            >
+              <span v-if="!isLoading">Sign In</span>
+              <span v-else>
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Signing in...
+              </span>
+            </button>
+
+            <p class="text-center text-muted">
+              Don't have an account? 
+              <RouterLink to="/register" class="text-primary fw-bold text-decoration-none">Sign up</RouterLink>
+            </p>
+          </form>
+
+          <div class="mt-5 p-3 bg-light rounded border text-center">
+            <small class="text-muted d-block mb-1">Demo Credentials:</small>
+            <code class="text-primary">admin@hospital.com</code> / <code>admin123</code>
           </div>
         </div>
       </div>
@@ -88,40 +95,24 @@ import { useAuthStore } from '../stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 
-const credentials = ref({
-  email: '',
-  password: ''
-})
-
+const credentials = ref({ email: '', password: '' })
 const isLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
 const handleLogin = async () => {
-  if (!credentials.value.email || !credentials.value.password) {
-    errorMessage.value = 'Please enter email and password'
-    return
-  }
-
   isLoading.value = true
   errorMessage.value = ''
-
   try {
-    const response = await authStore.login(credentials.value.email, credentials.value.password)
+    await authStore.login(credentials.value.email, credentials.value.password)
     successMessage.value = 'Login successful! Redirecting...'
-
-    // Redirect based on role
     setTimeout(() => {
-      if (authStore.isAdmin) {
-        router.push('/admin/dashboard')
-      } else if (authStore.isDoctor) {
-        router.push('/doctor/dashboard')
-      } else {
-        router.push('/patient/dashboard')
-      }
+      if (authStore.isAdmin) router.push('/admin/dashboard')
+      else if (authStore.isDoctor) router.push('/doctor/dashboard')
+      else router.push('/patient/dashboard')
     }, 500)
   } catch (error) {
-    errorMessage.value = error.message || 'Login failed. Please check your credentials.'
+    errorMessage.value = error.message || 'Invalid credentials'
   } finally {
     isLoading.value = false
   }
@@ -129,15 +120,24 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.min-vh-100 {
+.login-container {
   min-height: 100vh;
+  overflow: hidden;
 }
-
-.card {
-  border: none;
+.login-form-wrapper {
+  max-width: 500px;
 }
-
-.display-6 {
-  font-size: 4rem;
+.bg-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(135deg, rgba(0,168,150,0.9) 0%, rgba(2,128,115,0.95) 100%);
+  z-index: 0;
 }
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+}
+.circle-1 { width: 300px; height: 300px; top: -50px; left: -50px; }
+.circle-2 { width: 400px; height: 400px; bottom: -100px; right: -100px; }
 </style>

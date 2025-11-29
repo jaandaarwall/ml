@@ -1,41 +1,5 @@
 <template>
   <div class="d-flex" style="min-height: 100vh;">
-    <!-- Sidebar -->
-    <nav class="bg-primary text-white p-4" style="width: 250px; min-height: 100vh; overflow-y: auto;">
-      <ul class="nav flex-column gap-2">
-        <li class="nav-item">
-          <RouterLink to="/patient/dashboard" class="nav-link text-white">
-            <span>📊 Dashboard</span>
-          </RouterLink>
-        </li>
-        <li class="nav-item">
-          <RouterLink to="/patient/book-appointment" class="nav-link text-white">
-            <span>🔍 Find Doctors</span>
-          </RouterLink>
-        </li>
-        <li class="nav-item">
-          <RouterLink to="/patient/appointments" class="nav-link text-white">
-            <span>📅 My Appointments</span>
-          </RouterLink>
-        </li>
-        <li class="nav-item">
-          <RouterLink to="/patient/history" class="nav-link text-white">
-            <span>📋 Medical History</span>
-          </RouterLink>
-        </li>
-        <li class="nav-item">
-          <RouterLink to="/patient/profile" class="nav-link text-white">
-            <span>👤 My Profile</span>
-          </RouterLink>
-        </li>
-        <li class="nav-item">
-          <RouterLink to="/patient/analytics" class="nav-link text-white active">
-            <span>📈 Analytics</span>
-          </RouterLink>
-        </li>
-      </ul>
-    </nav>
-
     <!-- Main Content -->
     <div class="flex-grow-1">
       <!-- Header -->

@@ -179,7 +179,7 @@ const handleLogout = async () => {
   }
 }
 </script>
-
+<!-- 
 <style scoped>
 .navbar {
   z-index: 1030;
@@ -227,4 +227,100 @@ const handleLogout = async () => {
   width: 1px;
   background-color: white;
 }
-</style>
+</style> -->
+
+<!-- 
+
+<template>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm" style="height: var(--header-height);">
+    <div class="container-fluid">
+      <button class="btn text-white d-lg-none me-2" @click="$emit('toggle-sidebar')">
+        <i class="bi bi-list fs-4">☰</i>
+      </button>
+
+      <RouterLink to="/" class="navbar-brand fw-bold d-flex align-items-center">
+        <span class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">🏥</span> 
+        HMS <span class="fw-light ms-1">Portal</span>
+      </RouterLink>
+      
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#userNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="userNav">
+        <ul class="navbar-nav ms-auto align-items-center">
+          <li v-if="currentRoleLabel" class="nav-item me-3 d-none d-lg-block">
+            <span class="badge bg-white text-primary rounded-pill px-3 py-2">
+              {{ currentRoleLabel }}
+            </span>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#" role="button" data-bs-toggle="dropdown">
+              <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                👤
+              </div>
+              <span class="fw-medium">{{ userEmail }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 p-2">
+              <li><span class="dropdown-item-text text-muted small">Signed in as<br><strong>{{ userEmail }}</strong></span></li>
+              <li><hr class="dropdown-divider"></li>
+              
+              <div v-if="hasMultipleRoles">
+                <li><h6 class="dropdown-header text-uppercase small fw-bold">Switch View</h6></li>
+                <li v-if="authStore.isAdmin">
+                  <RouterLink to="/admin/dashboard" class="dropdown-item rounded">⚙️ Admin</RouterLink>
+                </li>
+                <li v-if="authStore.isDoctor">
+                  <RouterLink to="/doctor/dashboard" class="dropdown-item rounded">👨‍⚕️ Doctor</RouterLink>
+                </li>
+                <li v-if="authStore.isPatient">
+                  <RouterLink to="/patient/dashboard" class="dropdown-item rounded">👤 Patient</RouterLink>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+              </div>
+
+              <li>
+                <button @click="handleLogout" class="dropdown-item text-danger rounded fw-medium">
+                  🚪 Sign Out
+                </button>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import { useRouter, useRoute } from 'vue-router'
+
+const authStore = useAuthStore()
+const router = useRouter()
+const route = useRoute()
+
+const userEmail = computed(() => authStore.user?.email || 'Guest')
+
+const hasMultipleRoles = computed(() => {
+  let count = 0
+  if (authStore.isAdmin) count++
+  if (authStore.isDoctor) count++
+  if (authStore.isPatient) count++
+  return count > 1
+})
+
+const currentRoleLabel = computed(() => {
+  if (route.path.startsWith('/admin')) return 'Administrator'
+  if (route.path.startsWith('/doctor')) return 'Medical Officer'
+  if (route.path.startsWith('/patient')) return 'Patient'
+  return ''
+})
+
+const handleLogout = async () => {
+  await authStore.logout()
+  router.push('/login')
+}
+</script> -->

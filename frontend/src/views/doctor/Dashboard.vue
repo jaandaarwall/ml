@@ -1,29 +1,5 @@
 <template>
   <div class="d-flex" style="min-height: 100vh; background-color: #f8f9fa;">
-    <!-- Sidebar -->
-    <nav class="bg-primary text-white p-4" style="width: 240px; min-height: 100vh; overflow-y: auto;">
-      <div class="nav flex-column gap-2">
-        <RouterLink to="/doctor/dashboard" class="nav-link text-white active">
-          <span class="me-2">📊</span>Dashboard
-        </RouterLink>
-        <RouterLink to="/doctor/appointments" class="nav-link text-white">
-          <span class="me-2">📅</span>My Appointments
-        </RouterLink>
-        <RouterLink to="/doctor/patients" class="nav-link text-white">
-          <span class="me-2">👥</span>My Patients
-        </RouterLink>
-        <RouterLink to="/doctor/availability" class="nav-link text-white">
-          <span class="me-2">⏰</span>Set Availability
-        </RouterLink>
-        <RouterLink to="/doctor/profile" class="nav-link text-white">
-          <span class="me-2">👤</span>My Profile
-        </RouterLink>
-        <RouterLink to="/doctor/analytics" class="nav-link text-white">
-          <span class="me-2">📈</span>Analytics
-        </RouterLink>
-      </div>
-    </nav>
-
     <!-- Main Content -->
     <div class="flex-grow-1">
       <!-- Header -->

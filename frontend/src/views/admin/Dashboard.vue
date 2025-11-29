@@ -1,32 +1,5 @@
 <template>
   <div class="d-flex" style="height: 100vh;">
-    <!-- Sidebar Navigation -->
-    <div class="bg-primary text-white p-4" style="width: 250px; overflow-y: auto;">      
-      <nav class="nav flex-column">
-        <RouterLink to="/admin/dashboard" class="nav-link text-white mb-2 active-nav">
-          📊 Dashboard
-        </RouterLink>
-        <RouterLink to="/admin/doctors" class="nav-link text-white mb-2">
-          👨‍⚕️ Manage Doctors
-        </RouterLink>
-        <RouterLink to="/admin/patients" class="nav-link text-white mb-2">
-          👥 Manage Patients
-        </RouterLink>
-        <RouterLink to="/admin/departments" class="nav-link text-white mb-2">
-          🏥 Manage Departments
-        </RouterLink>
-        <RouterLink to="/admin/appointments" class="nav-link text-white mb-2">
-          📅 All Appointments
-        </RouterLink>
-        <RouterLink to="/admin/transactions" class="nav-link text-white mb-2">
-          💰 Transactions
-        </RouterLink>
-        <RouterLink to="/admin/analytics" class="nav-link text-white mb-2">
-          📈 Reports
-        </RouterLink>
-      </nav>
-    </div>
-
     <!-- Main Content -->
     <div class="flex-grow-1 d-flex flex-column overflow-auto">
       <!-- Header -->
@@ -108,11 +81,11 @@
                     🏥 Manage Depts
                   </RouterLink>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                   <RouterLink to="/admin/search" class="btn btn-info w-100">
                     🔍 Search Patients
                   </RouterLink>
-                </div>
+                </div> -->
                 <div class="col-md-3">
                   <RouterLink to="/admin/analytics" class="btn btn-warning w-100">
                     📊 View Analytics
