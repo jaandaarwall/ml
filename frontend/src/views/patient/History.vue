@@ -1,4 +1,3 @@
-<!--  views/patient/History.vue -->
 <template>
   <div class="d-flex" style="min-height: 100vh;">
     <!-- Main Content -->
@@ -38,14 +37,16 @@
               <button 
                 class="accordion-button" 
                 type="button" 
-                :class="{ collapsed: index !== 0 }"
-                :data-bs-target="`#history${index}`" 
-                data-bs-toggle="collapse"
+                :class="{ collapsed: activeIndex !== index }"
+                @click="toggleAccordion(index)"
               >
                 <strong>{{ record.date }}</strong> - Consultation with <strong>Dr. {{ record.doctor_name }}</strong> ({{ record.department }})
               </button>
             </h2>
-            <div :id="`history${index}`" class="accordion-collapse collapse" :class="{ show: index === 0 }">
+            <div 
+              class="accordion-collapse collapse" 
+              :class="{ show: activeIndex === index }"
+            >
               <div class="accordion-body">
                 <div class="row mb-3">
                   <div class="col-md-6">
@@ -119,6 +120,14 @@ const history = ref([])
 const showExportModal = ref(false)
 const exportDates = ref({ start: '', end: '' })
 
+// Accordion State
+const activeIndex = ref(0) // Default open the first item
+
+const toggleAccordion = (index) => {
+  // If clicking the currently open item, close it (-1). Otherwise, open the clicked index.
+  activeIndex.value = activeIndex.value === index ? -1 : index
+}
+
 const fetchHistory = async () => {
   try {
     const response = await patientAPI.getHistory()
@@ -134,11 +143,9 @@ const handleExport = async () => {
   exporting.value = true
   showExportModal.value = false
   try {
-    // 1. Start the task
     const res = await patientAPI.exportHistory(exportDates.value.start, exportDates.value.end)
     const taskId = res.task_id
     
-    // 2. Poll for status
     const interval = setInterval(async () => {
       try {
         const statusRes = await patientAPI.getTaskStatus(taskId)
@@ -146,7 +153,6 @@ const handleExport = async () => {
           clearInterval(interval)
           exporting.value = false
           
-          // 3. Download
           const blob = new Blob([statusRes.result.csv_data], { type: 'text/csv' })
           const url = window.URL.createObjectURL(blob)
           const a = document.createElement('a')
@@ -167,7 +173,7 @@ const handleExport = async () => {
         exporting.value = false
         alert('Error checking export status')
       }
-    }, 1000) // Check every 1 second
+    }, 1000) 
 
   } catch (err) {
     exporting.value = false
@@ -193,5 +199,10 @@ onMounted(fetchHistory)
   background-color: rgba(255, 255, 255, 0.2);
   font-weight: 600;
   border-left: 4px solid #fbbf24;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: #e7f1ff;
+  color: #0c63e4;
 }
 </style>
