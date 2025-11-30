@@ -217,14 +217,15 @@ class PatientBookAppointmentAPI(Resource):
         
         if booked_count >= availability.total_seats:
             return make_response(jsonify({'message': 'This time slot is fully booked'}), 400)
-        
         appointment = Appointment(
-            patient_id=patient.id,
-            doctor_id=doctor_id,
-            appointment_date=date,
-            appointment_time=time,
-            reason=data.get('reason')
-        )
+                    patient_id=patient.id,
+                    doctor_id=doctor_id,
+                    appointment_date=date,
+                    appointment_time=time,
+                    reason=data.get('reason'),
+                    status='Pending' 
+                )
+
         
         db.session.add(appointment)
         db.session.commit()

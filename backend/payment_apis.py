@@ -11,6 +11,11 @@ class DummyPaymentAPI(Resource):
         payment = Payment.query.get_or_404(payment_id)
 
         payment.status = "Success"
+        
+        # CHANGE: Update the associated appointment status to 'Booked'
+        if payment.appointment:
+            payment.appointment.status = "Booked"
+            
         db.session.commit()
 
         return make_response(jsonify({
