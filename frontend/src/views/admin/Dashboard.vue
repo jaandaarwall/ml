@@ -1,14 +1,11 @@
 <template>
   <div class="d-flex" style="height: 100vh;">
-    <!-- Main Content -->
     <div class="flex-grow-1 d-flex flex-column overflow-auto">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4">
         <h1 class="mb-1">⚙️ Admin Dashboard</h1>
         <p class="text-muted mb-0">Welcome back, System Administrator!</p>
       </div>
 
-      <!-- Content -->
       <div class="flex-grow-1 p-4 overflow-auto">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
@@ -21,7 +18,6 @@
         </div>
 
         <div v-else>
-          <!-- Statistics Grid -->
           <div class="row g-4 mb-4">
             <div class="col-md-3">
               <div class="card border-start border-primary border-4 h-100">
@@ -64,7 +60,6 @@
             </div>
           </div>
 
-          <!-- Quick Actions -->
           <div class="card mb-4">
             <div class="card-header bg-light">
               <h5 class="mb-0">⚡ Quick Actions</h5>
@@ -81,11 +76,6 @@
                     🏥 Manage Depts
                   </RouterLink>
                 </div>
-                <!-- <div class="col-md-3">
-                  <RouterLink to="/admin/search" class="btn btn-info w-100">
-                    🔍 Search Patients
-                  </RouterLink>
-                </div> -->
                 <div class="col-md-3">
                   <RouterLink to="/admin/analytics" class="btn btn-warning w-100">
                     📊 View Analytics

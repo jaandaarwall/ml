@@ -1,18 +1,12 @@
-<!-- views/patient/BookAppointment.vue -->
 <template>
   <div class="d-flex" style="min-height: 100vh;">
-    <!-- Sidebar -->
-    <!-- Main Content -->
     <div class="flex-grow-1">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4 mb-4">
         <h1 class="mb-1">🔍 Find Doctors</h1>
         <p class="text-muted mb-0">Search doctors by specialization</p>
       </div>
 
-      <!-- Content -->
       <div class="container-fluid px-4 pb-5">
-        <!-- Filter Section -->
         <div class="row mb-4">
           <div class="col-lg-8">
             <div class="card">
@@ -34,19 +28,16 @@
           </div>
         </div>
 
-        <!-- Loading State -->
         <div v-if="loadingDoctors" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
         </div>
 
-        <!-- Error State -->
         <div v-else-if="error" class="alert alert-danger">
           {{ error }}
         </div>
 
-        <!-- Doctors Grid -->
         <div v-else class="row g-4">
           <div v-if="filteredDoctors.length === 0" class="col-12">
             <div class="alert alert-info">
@@ -82,7 +73,6 @@
           </div>
         </div>
 
-        <!-- Booking Modal -->
         <div v-if="showBookingModal" class="modal d-block" style="background: rgba(0,0,0,0.5); display: block !important;">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -233,7 +223,6 @@ const selectDoctor = async (doctor) => {
   availableDates.value = []
   availableSlots.value = []
   
-  // Fetch available dates
   loadingDates.value = true
   try {
     const dates = await patientAPI.getAvailableDates(doctor.id)

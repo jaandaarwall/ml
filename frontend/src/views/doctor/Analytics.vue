@@ -1,6 +1,5 @@
 <template>
   <div class="d-flex" style="min-height: 100vh; background-color: #f8f9fa;">
-    <!-- Main Content -->
     <div class="flex-grow-1">
       <div class="bg-white border-bottom p-4 mb-4">
         <h2 class="mb-1">📈 My Analytics</h2>
@@ -129,7 +128,6 @@ onMounted(async () => {
   border-radius: 4px;
 }
 
-/* Dedicated container to prevent infinite expansion */
 .chart-container {
   position: relative;
   height: 350px;

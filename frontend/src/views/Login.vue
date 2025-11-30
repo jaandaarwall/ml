@@ -1,7 +1,6 @@
 <template>
   <div class="login-container">
     <div class="row g-0 h-100">
-      <!-- Left Side - Image & Brand -->
       <div class="col-lg-6 d-none d-lg-flex flex-column align-items-center justify-content-center bg-primary text-white p-5 position-relative overflow-hidden">
         <div class="bg-overlay"></div>
         <div class="position-relative z-1 text-center">
@@ -9,12 +8,10 @@
           <h1 class="fw-bold mb-3">We Care About You</h1>
           <p class="lead mb-4">Streamline your hospital experience with our advanced management system.</p>
         </div>
-        <!-- Decorative Circles -->
         <div class="circle circle-1"></div>
         <div class="circle circle-2"></div>
       </div>
 
-      <!-- Right Side - Form -->
       <div class="col-lg-6 d-flex align-items-center justify-content-center bg-white">
         <div class="login-form-wrapper p-5 w-100">
           <div class="text-center mb-5 d-lg-none">
@@ -86,11 +83,6 @@
               <RouterLink to="/" class="text-secondary small text-decoration-none">← Back to Home</RouterLink>
             </p>
           </form>
-
-          <div class="mt-5 p-3 bg-light rounded border text-center">
-            <small class="text-muted d-block mb-1">Demo Credentials:</small>
-            <code class="text-primary">admin@hospital.com</code> / <code>admin123</code>
-          </div>
         </div>
       </div>
     </div>

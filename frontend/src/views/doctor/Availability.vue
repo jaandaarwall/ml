@@ -1,6 +1,5 @@
 <template>
   <div class="d-flex" style="min-height: 100vh; background-color: #f8f9fa;">
-    <!-- Main Content -->
     <div class="flex-grow-1">
       <div class="bg-white border-bottom p-4 mb-4">
         <h2 class="mb-1">⏰ Set Availability</h2>
@@ -9,7 +8,6 @@
 
       <div class="container-fluid px-4">
         <div class="row">
-          <!-- Add New Availability Form -->
           <div class="col-lg-4 mb-4">
             <div class="card">
               <div class="card-header bg-white border-bottom">
@@ -34,7 +32,6 @@
                     <input v-model.number="newSlot.total_seats" type="number" class="form-control" value="30">
                   </div>
                   
-                  <!-- Repeat Option -->
                   <div class="mb-3 p-3 bg-light rounded border">
                     <label class="form-label fw-bold">🔁 Repeat Settings</label>
                     <div class="input-group">
@@ -63,7 +60,6 @@
             </div>
           </div>
 
-          <!-- Current Availability -->
           <div class="col-lg-8 mb-4">
             <div class="card">
               <div class="card-header bg-white border-bottom">
@@ -132,7 +128,6 @@
       </div>
     </div>
 
-    <!-- Slots Modal -->
     <div v-if="showSlotsModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -190,7 +185,6 @@ const newSlot = ref({
   repeat_days: 0
 })
 
-// Slots Management State
 const showSlotsModal = ref(false)
 const selectedAvail = ref(null)
 const generatedSlots = ref([])
@@ -225,7 +219,6 @@ const addAvailability = async () => {
   try {
     const res = await doctorAPI.addAvailability(newSlot.value)
     alert(res.message || 'Availability added successfully')
-    // Reset form
     newSlot.value = { date: '', start_time: '', end_time: '', total_seats: 30, repeat_days: 0 }
     fetchAvailabilities()
   } catch (err) {
@@ -236,7 +229,6 @@ const addAvailability = async () => {
 const deleteAvailability = async (avail) => {
   let message = 'Delete this availability slot?'
   
-  // Warning if bookings exist
   if (avail.booking_count > 0) {
     message = `⚠️ WARNING: There are ${avail.booking_count} active booking(s) for this slot.\n\nDeleting this availability will CANCEL all these appointments and notify the patients via email.\n\nAre you sure you want to proceed?`
   }

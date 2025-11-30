@@ -1,15 +1,10 @@
-<!-- views/patient/Profile.vue -->
 <template>
   <div class="d-flex" style="min-height: 100vh;">
-    <!-- Main Content -->
     <div class="flex-grow-1">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4 mb-4">
         <h1 class="mb-1">👤 My Profile</h1>
         <p class="text-muted mb-0">Update your personal information</p>
       </div>
-
-      <!-- Content -->
       <div class="container-fluid px-4 pb-5">
         <div class="row">
           <div class="col-lg-6">

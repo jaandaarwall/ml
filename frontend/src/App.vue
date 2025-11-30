@@ -1,15 +1,12 @@
 <template>
   <div id="app">
-    <!-- Layout for Authenticated Users -->
     <div v-if="authStore.isAuthenticated && !isAuthPage" class="app-container">
-      <!-- Mobile Sidebar Toggle Overlay -->
       <div 
         class="sidebar-overlay d-lg-none" 
         :class="{ show: isSidebarOpen }" 
         @click="isSidebarOpen = false"
       ></div>
 
-      <!-- Sidebar Navigation -->
       <aside class="sidebar" :class="{ show: isSidebarOpen }">
         <div class="sidebar-header d-flex align-items-center justify-content-between px-4 py-3 d-lg-none">
           <h5 class="text-white m-0 fw-bold">Menu</h5>
@@ -17,7 +14,6 @@
         </div>
 
         <nav class="nav flex-column mt-2">
-          <!-- Admin Links -->
           <template v-if="isAdminRoute">
             <div class="px-4 py-2 text-white-50 small text-uppercase fw-bold">Admin Console</div>
             <RouterLink to="/admin/dashboard" class="nav-link" @click="closeSidebar"><span>📊</span> Dashboard</RouterLink>
@@ -29,7 +25,6 @@
             <RouterLink to="/admin/analytics" class="nav-link" @click="closeSidebar"><span>📈</span> Analytics</RouterLink>
           </template>
 
-          <!-- Doctor Links -->
           <template v-if="isDoctorRoute">
              <div class="px-4 py-2 text-white-50 small text-uppercase fw-bold">Medical Practice</div>
              <RouterLink to="/doctor/dashboard" class="nav-link" @click="closeSidebar"><span>📊</span> Dashboard</RouterLink>
@@ -39,7 +34,6 @@
              <RouterLink to="/doctor/profile" class="nav-link" @click="closeSidebar"><span>👤</span> Profile</RouterLink>
           </template>
 
-          <!-- Patient Links -->
           <template v-if="isPatientRoute">
              <div class="px-4 py-2 text-white-50 small text-uppercase fw-bold">My Health</div>
              <RouterLink to="/patient/dashboard" class="nav-link" @click="closeSidebar"><span>📊</span> Dashboard</RouterLink>
@@ -52,7 +46,6 @@
         </nav>
       </aside>
 
-      <!-- Main Content Area -->
       <div class="main-content">
         <Navbar @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
         <div class="container-fluid py-4">
@@ -61,7 +54,6 @@
       </div>
     </div>
 
-    <!-- Layout for Guests (Login/Register) -->
     <div v-else>
       <RouterView />
     </div>
@@ -100,7 +92,6 @@ onMounted(() => {
 </script>
 
 <style>
-/* Overlay for mobile sidebar */
 .sidebar-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;

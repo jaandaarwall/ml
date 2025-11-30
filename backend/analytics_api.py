@@ -7,15 +7,10 @@ from datetime import datetime, timedelta
 from .Sqldatabase import db
 from .models import Appointment, Doctor, Patient, Department, Payment, User
 
-
-# ---------------------------------------
-# ADMIN ANALYTICS
-# ---------------------------------------
 class AdminAnalyticsAPI(Resource):
     @auth_token_required
     @roles_required('admin')
     def get(self):
-        # 1. Appointments vs Cancellations per Month
         monthly_appts = db.session.query(
             func.strftime('%Y-%m', Appointment.appointment_date),
             func.count(Appointment.id)
@@ -26,7 +21,6 @@ class AdminAnalyticsAPI(Resource):
             func.count(Appointment.id)
         ).filter(Appointment.status == 'Cancelled').group_by(func.strftime('%Y-%m', Appointment.appointment_date)).all()
 
-        # Merge Appointment Data
         appt_data_map = {}
         for row in monthly_appts:
             appt_data_map[row[0]] = {'total': row[1], 'cancelled': 0}
@@ -39,7 +33,6 @@ class AdminAnalyticsAPI(Resource):
 
         sorted_appt_months = sorted(appt_data_map.keys())
         
-        # 2. Revenue vs Refunded (Cancellation Revenue) per Month
         revenue_data = db.session.query(
             func.strftime('%Y-%m', Payment.created_at),
             func.sum(Payment.amount)
@@ -63,7 +56,6 @@ class AdminAnalyticsAPI(Resource):
 
         sorted_rev_months = sorted(rev_data_map.keys())
 
-        # 3. Doctors Per Department
         dept_stats = db.session.query(
             Department.name,
             func.count(Doctor.id)
@@ -72,7 +64,6 @@ class AdminAnalyticsAPI(Resource):
         dept_labels = [row[0] for row in dept_stats]
         dept_values = [row[1] for row in dept_stats]
 
-        # 4. Appointment Status Summary
         status_stats = db.session.query(
             Appointment.status,
             func.count(Appointment.id)
@@ -81,14 +72,9 @@ class AdminAnalyticsAPI(Resource):
         status_labels = [row[0] for row in status_stats]
         status_values = [row[1] for row in status_stats]
 
-        # 5. Top 10 Active Doctors (Current Month)
         today = datetime.now()
         start_of_month = today.replace(day=1)
-        # Calculate end of month roughly or just filter >= start_of_month
-        # To be precise for "current month", we filter appointment_date between start and end of this month.
-        # Or just >= start_of_month if we only care about this month so far.
-        
-        # Finding last day of month
+
         if today.month == 12:
             next_month = today.replace(year=today.year + 1, month=1, day=1)
         else:
@@ -136,9 +122,6 @@ class AdminAnalyticsAPI(Resource):
         })
 
 
-# ---------------------------------------
-# DOCTOR ANALYTICS
-# ---------------------------------------
 class DoctorAnalyticsAPI(Resource):
     @auth_token_required
     @roles_required('doctor')
@@ -151,7 +134,6 @@ class DoctorAnalyticsAPI(Resource):
         today = datetime.now().date()
         last_7 = today - timedelta(days=6)
 
-        # Last 7 Days Appointments
         week_data = db.session.query(
             func.strftime('%Y-%m-%d', Appointment.appointment_date),
             func.count(Appointment.id)
@@ -163,7 +145,6 @@ class DoctorAnalyticsAPI(Resource):
         week_labels = [row[0] for row in week_data]
         week_values = [row[1] for row in week_data]
 
-        # Appointment Status Breakdown
         status_data = db.session.query(
             Appointment.status,
             func.count(Appointment.id)
@@ -184,9 +165,6 @@ class DoctorAnalyticsAPI(Resource):
         })
 
 
-# ---------------------------------------
-# PATIENT ANALYTICS
-# ---------------------------------------
 class PatientAnalyticsAPI(Resource):
     @auth_token_required
     @roles_required('user')
@@ -196,7 +174,6 @@ class PatientAnalyticsAPI(Resource):
         if not patient:
             return jsonify({"appointments_per_month": {}, "money_spent": {}})
 
-        # Appointments Per Month (Total)
         monthly_data = db.session.query(
             func.strftime('%Y-%m', Appointment.appointment_date),
             func.count(Appointment.id)
@@ -204,7 +181,6 @@ class PatientAnalyticsAPI(Resource):
             Appointment.patient_id == patient.id
         ).group_by(func.strftime('%Y-%m', Appointment.appointment_date)).all()
 
-        # Cancellations Per Month
         cancellation_data = db.session.query(
             func.strftime('%Y-%m', Appointment.appointment_date),
             func.count(Appointment.id)
@@ -213,14 +189,11 @@ class PatientAnalyticsAPI(Resource):
             Appointment.status == 'Cancelled'
         ).group_by(func.strftime('%Y-%m', Appointment.appointment_date)).all()
 
-        # Process and Merge Data
         data_map = {}
         
-        # Initialize with total counts
         for row in monthly_data:
             data_map[row[0]] = {'total': row[1], 'cancelled': 0}
             
-        # Add cancellation counts
         for row in cancellation_data:
             if row[0] in data_map:
                 data_map[row[0]]['cancelled'] = row[1]
@@ -232,7 +205,6 @@ class PatientAnalyticsAPI(Resource):
         month_total_values = [data_map[m]['total'] for m in sorted_months]
         month_cancelled_values = [data_map[m]['cancelled'] for m in sorted_months]
 
-        # Money Spent vs Date (Successful Payments Only)
         money_data = db.session.query(
             func.strftime('%Y-%m-%d', Payment.created_at),
             func.sum(Payment.amount)

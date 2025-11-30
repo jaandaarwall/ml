@@ -14,9 +14,7 @@
     <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
     
     <div v-else>
-      <!-- Top Row: Info & Chart -->
       <div class="row g-4 mb-4">
-        <!-- Doctor Info -->
         <div class="col-lg-4">
           <div class="card h-100">
             <div class="card-header bg-primary text-white">
@@ -44,7 +42,6 @@
           </div>
         </div>
 
-        <!-- Performance Chart -->
         <div class="col-lg-8">
           <div class="card h-100">
             <div class="card-header bg-white">
@@ -59,7 +56,6 @@
         </div>
       </div>
       
-      <!-- Appointments List -->
       <div class="card">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
           <h5 class="mb-0">📅 Appointment History</h5>
@@ -112,7 +108,6 @@
       </div>
     </div>
 
-    <!-- Edit Doctor Modal -->
     <div v-if="showEditModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -159,7 +154,6 @@
       </div>
     </div>
 
-    <!-- Treatment Detail Modal -->
     <div v-if="selectedTreatment" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -185,7 +179,6 @@
       </div>
     </div>
 
-    <!-- Patient Detail Modal -->
     <div v-if="selectedPatient" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -239,14 +232,12 @@ const doctor = ref({})
 const appointments = ref([])
 const departments = ref([])
 
-// Modals State
 const selectedTreatment = ref(null)
 const selectedPatient = ref(null)
 const loadingPatient = ref(false)
 const showEditModal = ref(false)
 const editForm = ref({})
 
-// Chart State
 const chartCanvas = ref(null)
 let chartInstance = null
 
@@ -268,7 +259,7 @@ const showTreatment = (apt) => {
 }
 
 const fetchAndShowPatient = async (patientId) => {
-  selectedPatient.value = {} // Reset to show modal immediately
+  selectedPatient.value = {}
   loadingPatient.value = true
   try {
     const response = await adminAPI.getPatientDetail(patientId)
@@ -298,7 +289,6 @@ const updateDoctor = async () => {
     await adminAPI.updateDoctor(route.params.id, editForm.value)
     alert('Doctor updated successfully')
     showEditModal.value = false
-    // Refresh data
     loadData()
   } catch (err) {
     alert(err.message || 'Failed to update doctor')
@@ -372,7 +362,6 @@ const loadData = async () => {
     
     const chartData = processChartData(response.appointments)
     
-    // Load departments for edit modal if needed
     if (departments.value.length === 0) {
         const deptResponse = await departmentsAPI.getDepartments()
         departments.value = deptResponse

@@ -44,7 +44,6 @@ def send_daily_reminders():
 def check_missed_appointments():
     today = datetime.now().date()
     
-    # Find appointments scheduled for today that are still 'Booked' (not Completed/Cancelled)
     missed_appointments = Appointment.query.filter_by(
         appointment_date=today,
         status='Booked'
@@ -52,7 +51,6 @@ def check_missed_appointments():
     
     count = 0
     for apt in missed_appointments:
-        # Update status to Action Pending (was Missed)
         apt.status = 'Action Pending'
         db.session.add(apt)
         
@@ -79,7 +77,6 @@ Hospital Management Team"""
 
 @shared_task(ignore_results=False, name="Monthly doctor activity report")
 def send_monthly_reports():
-    # Calculate previous month range
     today = datetime.now()
     first_day_this_month = today.replace(day=1)
     last_day_prev_month = first_day_this_month - timedelta(days=1)

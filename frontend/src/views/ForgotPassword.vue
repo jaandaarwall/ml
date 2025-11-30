@@ -84,7 +84,6 @@ const handleReset = async () => {
 
   try {
     const response = await authAPI.forgotPassword(email.value)
-    // Use the message returned from the backend
     successMessage.value = response.message
   } catch (err) {
     errorMessage.value = err.message || 'Something went wrong. Please try again.'

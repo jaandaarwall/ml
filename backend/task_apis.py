@@ -14,10 +14,6 @@ from .tasks import (
 )
 from .models import Doctor
 
-
-# -------------------------------
-# Trigger normal example task
-# -------------------------------
 class TaskExampleAPI(Resource):
     @auth_token_required
     def get(self):
@@ -28,9 +24,6 @@ class TaskExampleAPI(Resource):
         }), 202)
 
 
-# -------------------------------
-# Trigger manual email sending
-# -------------------------------
 class TaskSendEmailAPI(Resource):
     @auth_token_required
     @roles_required('admin')
@@ -52,9 +45,6 @@ class TaskSendEmailAPI(Resource):
         }), 202)
 
 
-# -------------------------------
-# Trigger monthly reports manually
-# -------------------------------
 class TaskMonthlyReportAPI(Resource):
     @auth_token_required
     @roles_required('admin')
@@ -66,9 +56,7 @@ class TaskMonthlyReportAPI(Resource):
         }), 202)
 
 
-# -------------------------------
-# Export patient history as CSV
-# -------------------------------
+
 class TaskPatientCSVAPI(Resource):
     @auth_token_required
     @roles_required('user')
@@ -89,9 +77,7 @@ class TaskPatientCSVAPI(Resource):
             "task_id": task.id
         }), 202)
 
-# -------------------------------
-# Admin Exports
-# -------------------------------
+
 class TaskAdminAppointmentsCSVAPI(Resource):
     @auth_token_required
     @roles_required('admin')
@@ -122,9 +108,6 @@ class TaskAdminTransactionsCSVAPI(Resource):
             "task_id": task.id
         }), 202)
 
-# -------------------------------
-# Doctor Export
-# -------------------------------
 class TaskDoctorAppointmentsCSVAPI(Resource):
     @auth_token_required
     @roles_required('doctor')
@@ -144,9 +127,6 @@ class TaskDoctorAppointmentsCSVAPI(Resource):
             "task_id": task.id
         }), 202)
 
-# -------------------------------
-# General Task Status
-# -------------------------------
 class TaskStatusAPI(Resource):
     @auth_token_required
     def get(self, task_id):

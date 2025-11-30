@@ -7,7 +7,7 @@ from email import encoders
 SMTP_SERVER_HOST = "smtp.gmail.com"
 SMTP_SERVER_PORT = 587
 SENDER_ADDRESS = "rivisia47@gmail.com"
-SENDER_PASSWORD = "glsq rmah ooxz itej"   # 16-character Gmail App Password
+SENDER_PASSWORD = "glsq rmah ooxz itej"   
 
 def send_email(to_address, subject, message, content="html", attachment_file=None):
     msg = MIMEMultipart()

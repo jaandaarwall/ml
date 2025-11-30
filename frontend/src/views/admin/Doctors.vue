@@ -1,8 +1,6 @@
 <template>
   <div class="d-flex" style="height: 100vh;">
-    <!-- Main Content -->
     <div class="flex-grow-1 d-flex flex-column overflow-auto">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
         <div>
           <h1 class="mb-1">👨‍⚕️ Manage Doctors</h1>
@@ -13,9 +11,7 @@
         </button>
       </div>
 
-      <!-- Content -->
       <div class="flex-grow-1 p-4 overflow-auto">
-        <!-- Search Bar -->
         <div class="mb-3">
           <input 
             v-model="searchQuery" 
@@ -85,7 +81,6 @@
       </div>
     </div>
 
-    <!-- Add Doctor Modal -->
     <div v-if="showAddModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

@@ -1,4 +1,3 @@
-<!-- views/admin/Search.vue -->
 <template>
   <div class="d-flex" style="height: 100vh;">
       <div class="mt-5 pt-3 border-top border-light">
@@ -8,15 +7,12 @@
       </div>
     </div>
 
-    <!-- Main Content -->
     <div class="flex-grow-1 d-flex flex-column overflow-auto">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4">
         <h1 class="mb-1">🔍 Search</h1>
         <p class="text-muted mb-0">Search for doctors and patients</p>
       </div>
 
-      <!-- Content -->
       <div class="flex-grow-1 p-4 overflow-auto">
         <div class="card mb-4">
           <div class="card-body">
@@ -44,7 +40,6 @@
         </div>
 
         <div v-if="searched">
-          <!-- Doctors Results -->
           <div v-if="results.doctors.length > 0" class="card mb-4">
             <div class="card-header bg-light">
               <h5 class="mb-0">👨‍⚕️ Doctors ({{ results.doctors.length }})</h5>
@@ -75,7 +70,6 @@
             </div>
           </div>
 
-          <!-- Patients Results -->
           <div v-if="results.patients.length > 0" class="card">
             <div class="card-header bg-light">
               <h5 class="mb-0">👥 Patients ({{ results.patients.length }})</h5>

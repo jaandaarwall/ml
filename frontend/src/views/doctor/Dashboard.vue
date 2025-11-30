@@ -1,14 +1,11 @@
 <template>
   <div class="d-flex" style="min-height: 100vh; background-color: #f8f9fa;">
-    <!-- Main Content -->
     <div class="flex-grow-1">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4 mb-4">
         <h2 class="mb-1">👨‍⚕️ Doctor Dashboard</h2>
         <p class="text-muted mb-0">Welcome, Dr. {{ doctorName }} | {{ departmentName }}</p>
       </div>
 
-      <!-- Content -->
       <div class="container-fluid px-4">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
@@ -17,7 +14,6 @@
         </div>
 
         <div v-else>
-          <!-- Statistics Cards -->
           <div class="row mb-4">
             <div class="col-md-4 mb-3">
               <div class="card border-left-primary h-100">
@@ -45,7 +41,6 @@
             </div>
           </div>
 
-          <!-- Today's Appointments -->
           <div class="card mb-4">
             <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
               <h5 class="mb-0">📅 Today's Appointments</h5>
@@ -96,7 +91,6 @@
             </div>
           </div>
 
-          <!-- Upcoming Appointments -->
           <div class="card">
             <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
               <h5 class="mb-0">📆 Upcoming Appointments</h5>
@@ -146,7 +140,6 @@
       </div>
     </div>
 
-    <!-- Patient Details Modal -->
     <div v-if="showPatientModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -160,7 +153,6 @@
             </div>
             
             <div v-else>
-              <!-- Patient Personal Details -->
               <div class="card mb-4 border-info">
                 <div class="card-header bg-light text-info fw-bold">
                   👤 Personal Details
@@ -181,7 +173,6 @@
                 </div>
               </div>
 
-              <!-- Medical History -->
               <h5 class="mb-3 text-secondary">📋 Medical History</h5>
               <div v-if="patientHistory.length === 0" class="alert alert-warning">
                 No previous treatment history found for this patient.
@@ -227,11 +218,10 @@ const dashboard = ref({
   total_patients: 0
 })
 
-// Modal State
 const showPatientModal = ref(false)
 const loadingHistory = ref(false)
 const patientHistory = ref([])
-const patientDetails = ref({}) // Store patient info
+const patientDetails = ref({}) 
 
 const handleLogout = async () => {
   try {
@@ -250,7 +240,6 @@ const openPatientDetails = async (patientId) => {
   
   try {
     const response = await doctorAPI.getPatientHistory(patientId)
-    // Backend now returns { patient: {...}, history: [...] }
     patientDetails.value = response.patient
     patientHistory.value = response.history.map(record => ({ ...record, showDetails: false }))
   } catch (err) {

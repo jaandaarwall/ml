@@ -1,8 +1,6 @@
 <template>
   <div class="d-flex" style="height: 100vh;">
-    <!-- Main Content -->
     <div class="flex-grow-1 d-flex flex-column overflow-auto">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
         <div>
           <h1 class="mb-1">🏥 Departments</h1>
@@ -13,7 +11,6 @@
         </button>
       </div>
 
-      <!-- Content -->
       <div class="flex-grow-1 p-4 overflow-auto">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
@@ -63,7 +60,6 @@
       </div>
     </div>
 
-    <!-- Add/Edit Modal -->
     <div v-if="showModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -109,7 +105,6 @@ const loading = ref(true)
 const error = ref('')
 const departments = ref([])
 
-// Modal State
 const showModal = ref(false)
 const isEditing = ref(false)
 const submitting = ref(false)

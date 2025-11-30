@@ -1,4 +1,3 @@
-<!-- views/doctor/Treatment.vue -->
 <template>
   <div class="container-fluid">
     <div class="page-header">

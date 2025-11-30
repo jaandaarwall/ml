@@ -1,5 +1,3 @@
-#####
-# celery_app.py
 from celery import Celery, Task
 
 def celery_init_app(app):

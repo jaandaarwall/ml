@@ -1,10 +1,8 @@
-/* frontend/src/assets/main.css */
 
-/* Import Bootstrap is handled in main.js or index.html, we just override here */
 
 :root {
   /* Medical Theme Palette */
-  --primary-color: #00a896; /* Teal */
+  --primary-color: #00a896; 
   --primary-dark: #028073;
   --secondary-color: #02c39a;
   --accent-color: #f0f3bd;

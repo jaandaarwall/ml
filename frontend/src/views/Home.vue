@@ -1,6 +1,5 @@
 <template>
   <div class="home-container">
-    <!-- Navigation Overlay -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top py-3">
       <div class="container">
         <a class="navbar-brand fw-bold fs-3 d-flex align-items-center" href="#">
@@ -14,7 +13,6 @@
       </div>
     </nav>
 
-    <!-- Hero Section -->
     <header class="hero-section d-flex align-items-center text-white text-center">
       <div class="container">
         <div class="row justify-content-center">
@@ -26,9 +24,6 @@
               Your Health, <br>
               <span class="text-gradient">Our Priority</span>
             </h1>
-            <p class="lead mb-5 opacity-90 fs-5 w-75 mx-auto">
-              Experience the future of hospital management. Seamlessly connect with doctors, manage appointments, and track your medical history all in one place.
-            </p>
             <div class="d-flex gap-3 justify-content-center flex-wrap">
               <RouterLink to="/register" class="btn btn-light btn-lg px-5 py-3 fw-bold rounded-pill shadow-lg transform-hover">
                 Get Started Now
@@ -41,7 +36,6 @@
         </div>
       </div>
       
-      <!-- Decorative Elements -->
       <div class="circle circle-1"></div>
       <div class="circle circle-2"></div>
       <div class="wave-bottom">
@@ -51,7 +45,6 @@
       </div>
     </header>
 
-    <!-- Features Section -->
     <section class="py-5 bg-light" style="margin-top: -2px;">
       <div class="container py-5">
         <div class="row g-4">
@@ -86,7 +79,6 @@
       </div>
     </section>
 
-    <!-- Footer -->
     <footer class="bg-white py-4 border-top">
       <div class="container text-center">
         <p class="mb-0 text-muted">© 2025 Hospital Management System. All rights reserved.</p>

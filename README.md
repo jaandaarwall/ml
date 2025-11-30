@@ -24,7 +24,8 @@ source .venv/bin/activate
 ## **Step 2: Install Dependencies**
 Navigate to the Flask backend directory and install dependencies:
 ```bash
-cd backend  # Change to the backend directory
+mkdir my_project
+cd backend 
 uv pip install -r requirements.txt
 ```
 
@@ -32,8 +33,6 @@ uv pip install -r requirements.txt
 ## **Step 3: Start Redis Server**
 Ensure Redis is installed and start the Redis server:
 ```bash
-sudo service redis-server start
-or 
 redis-server
 
 ```
@@ -45,7 +44,6 @@ redis-cli ping  # Should return 'PONG'
 ---
 ## **Step 4: Start Celery Worker**
 ```bash
-cd backend  # Ensure you're in the backend directory
 celery -A app.celery worker --loglevel=info
 ```
 
@@ -84,3 +82,6 @@ sudo systemctl stop redis
 
 pkill -f "celery"  # Stop Celery worker and beat
 ```
+
+
+

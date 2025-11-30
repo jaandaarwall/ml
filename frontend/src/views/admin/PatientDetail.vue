@@ -1,4 +1,3 @@
-<!-- views/admin/PatientDetail.vue -->
 <template>
   <div class="container-fluid">
     <div class="page-header">
@@ -57,7 +56,6 @@
       </div>
     </div>
 
-    <!-- Treatment Detail Modal -->
     <div v-if="selectedTreatment" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

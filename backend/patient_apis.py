@@ -11,7 +11,6 @@ from .cache import cache
 class PatientDashboardAPI(Resource):
     @auth_token_required
     @roles_required('user')
-    # Short cache for dashboard, invalidated by time (30s) as appointments change
     @cache.cached(timeout=30, key_prefix=lambda: f'patient_dashboard_{current_user.id}')
     def get(self):
         patient = Patient.query.filter_by(user_id=current_user.id).first()
@@ -21,7 +20,6 @@ class PatientDashboardAPI(Resource):
             db.session.add(patient)
             db.session.commit()
         
-        # Include 'Action Pending' in upcoming/actionable appointments
         upcoming_appointments = Appointment.query.filter(
             Appointment.patient_id == patient.id,
             Appointment.status.in_(['Booked', 'Action Pending'])
@@ -35,7 +33,6 @@ class PatientDashboardAPI(Resource):
         upcoming_list = []
         today = datetime.now().date()
         for apt in upcoming_appointments:
-            # Show Action Pending regardless of date, show Booked if today or future
             if apt.status == 'Action Pending' or (apt.status == 'Booked' and apt.appointment_date >= today):
                 upcoming_list.append({
                     'id': apt.id,
@@ -295,21 +292,17 @@ class PatientCancelAppointmentAPI(Resource):
         if appointment.patient_id != patient.id:
             return make_response(jsonify({'message': 'Unauthorized'}), 403)
         
-        # Allow cancelling Booked or Action Pending appointments
         if appointment.status not in ['Booked', 'Action Pending']:
             return make_response(jsonify({'message': 'Cannot cancel this appointment'}), 400)
         
-        # Refund Logic
         payment = Payment.query.filter_by(appointment_id=appointment.id).first()
         refund_msg = ""
         
         if payment and payment.status == 'Success':
             refund_amount = payment.amount * 0.90
-            # Update payment status to indicate a refund was processed
             payment.status = 'Refunded'
             refund_msg = f" ₹{refund_amount} (90%) has been refunded to your original payment method."
             
-            # Send refund notification email
             subject = "Appointment Cancellation & Refund Processed"
             body = f"""Hello {patient.user.username},
 
@@ -340,7 +333,6 @@ class PatientRescheduleAppointmentAPI(Resource):
         if appointment.patient_id != patient.id:
             return make_response(jsonify({'message': 'Unauthorized'}), 403)
         
-        # Allow rescheduling for 'Booked' (standard) and 'Action Pending' (missed/doctor cancelled)
         if appointment.status not in ['Booked', 'Action Pending']:
             return make_response(jsonify({'message': 'Cannot reschedule a completed or cancelled appointment'}), 400)
         

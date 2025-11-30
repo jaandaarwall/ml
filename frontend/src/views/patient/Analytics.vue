@@ -1,14 +1,11 @@
 <template>
   <div class="d-flex" style="min-height: 100vh;">
-    <!-- Main Content -->
     <div class="flex-grow-1">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4 mb-4">
         <h1 class="mb-1">📈 My Analytics</h1>
         <p class="text-muted mb-0">Overview of your medical history statistics</p>
       </div>
 
-      <!-- Content -->
       <div class="container-fluid px-4 pb-5">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
@@ -170,7 +167,6 @@ onMounted(async () => {
   border-left: 4px solid #fbbf24;
 }
 
-/* Dedicated container to prevent infinite expansion */
 .chart-container {
   position: relative;
   height: 350px;

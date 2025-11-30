@@ -1,6 +1,5 @@
 <template>
   <div class="d-flex" style="min-height: 100vh; background-color: #f8f9fa;">
-    <!-- Main Content -->
     <div class="flex-grow-1">
       <div class="bg-white border-bottom p-4 mb-4 d-flex justify-content-between align-items-center">
         <div>
@@ -8,7 +7,6 @@
           <p class="text-muted mb-0">View and manage all your appointments.</p>
         </div>
         <div class="d-flex gap-2">
-          <!-- Sorting Dropdown -->
           <select v-model="sortOrder" class="form-select" style="width: 150px;">
             <option value="desc">Newest First</option>
             <option value="asc">Oldest First</option>
@@ -52,14 +50,12 @@
                     </td>
                     <td>
                       <div class="btn-group">
-                        <!-- Treatment Button: Shows for both Booked and Completed (to edit) -->
                         <RouterLink v-if="apt.status === 'Booked' || apt.status === 'Completed'" 
                           :to="`/doctor/appointment/${apt.id}/treatment`"
                           :class="['btn', 'btn-sm', apt.status === 'Completed' ? 'btn-warning' : 'btn-success']">
                           {{ apt.status === 'Completed' ? '✏️ Edit Treatment' : '💊 Start Treatment' }}
                         </RouterLink>
                         
-                        <!-- Patient Detail Button -->
                         <button @click="openPatientDetails(apt.patient_id)" 
                                 class="btn btn-sm btn-info text-white">
                           👤 Patient Detail
@@ -75,7 +71,6 @@
       </div>
     </div>
 
-    <!-- Patient Details Modal -->
     <div v-if="showPatientModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -89,7 +84,6 @@
             </div>
             
             <div v-else>
-              <!-- Patient Personal Details -->
               <div class="card mb-4 border-info">
                 <div class="card-header bg-light text-info fw-bold">
                   👤 Personal Details
@@ -110,7 +104,6 @@
                 </div>
               </div>
 
-              <!-- Medical History -->
               <h5 class="mb-3 text-secondary">📋 Medical History</h5>
               <div v-if="patientHistory.length === 0" class="alert alert-warning">
                 No previous treatment history found for this patient.
@@ -136,7 +129,6 @@
       </div>
     </div>
     
-    <!-- Export Modal (Keep existing) -->
     <div v-if="showExportModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -176,13 +168,11 @@ const loading = ref(true)
 const appointments = ref([])
 const sortOrder = ref('desc')
 
-// Patient Detail Modal State
 const showPatientModal = ref(false)
 const loadingHistory = ref(false)
 const patientHistory = ref([])
-const patientDetails = ref({}) // Store patient info
+const patientDetails = ref({}) 
 
-// Export State
 const exporting = ref(false)
 const showExportModal = ref(false)
 const exportDates = ref({ start: '', end: '' })
@@ -208,7 +198,6 @@ const openPatientDetails = async (patientId) => {
   
   try {
     const response = await doctorAPI.getPatientHistory(patientId)
-    // Backend now returns { patient: {...}, history: [...] }
     patientDetails.value = response.patient
     patientHistory.value = response.history.map(record => ({ ...record, showDetails: false }))
   } catch (err) {

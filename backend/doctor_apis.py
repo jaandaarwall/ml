@@ -33,7 +33,7 @@ class DoctorDashboardAPI(Resource):
         for apt in today_appointments:
             today_list.append({
                 'id': apt.id,
-                'patient_id': apt.patient_id, # Added patient_id
+                'patient_id': apt.patient_id, 
                 'patient_name': apt.patient.user.username,
                 'time': apt.appointment_time.strftime('%H:%M'),
                 'status': apt.status,
@@ -44,11 +44,11 @@ class DoctorDashboardAPI(Resource):
         for apt in upcoming_appointments:
             upcoming_list.append({
                 'id': apt.id,
-                'patient_id': apt.patient_id, # Added patient_id
+                'patient_id': apt.patient_id, 
                 'patient_name': apt.patient.user.username,
                 'date': apt.appointment_date.strftime('%Y-%m-%d'),
                 'time': apt.appointment_time.strftime('%H:%M'),
-                'status': apt.status # Included status
+                'status': apt.status 
             })
         
         return make_response(jsonify({
@@ -63,7 +63,6 @@ class DoctorAppointmentsAPI(Resource):
     def get(self):
         doctor = Doctor.query.filter_by(user_id=current_user.id).first_or_404()
         
-        # Allow filtering by date if provided
         date_str = request.args.get('date')
         query = Appointment.query.filter_by(doctor_id=doctor.id)
         
@@ -72,7 +71,7 @@ class DoctorAppointmentsAPI(Resource):
                 query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
                 query = query.filter_by(appointment_date=query_date)
             except ValueError:
-                pass # Ignore invalid date format
+                pass 
 
         appointments = query.order_by(Appointment.appointment_date.desc()).all()
         
@@ -127,7 +126,6 @@ class DoctorAvailabilityAPI(Resource):
         
         availability_list = []
         for avail in availabilities:
-            # Count active bookings for this slot to show warning on frontend
             booking_count = Appointment.query.filter(
                 Appointment.doctor_id == doctor.id,
                 Appointment.appointment_date == avail.date,
@@ -162,11 +160,9 @@ class DoctorAvailabilityAPI(Resource):
         count = 0
         skipped_count = 0
         
-        # Loop to create availability for the initial date + repeat_days
         for i in range(repeat_days + 1):
             current_date = start_date + timedelta(days=i)
             
-            # Check if availability already exists for this date
             existing_availability = DoctorAvailability.query.filter_by(
                 doctor_id=doctor.id,
                 date=current_date
@@ -174,7 +170,7 @@ class DoctorAvailabilityAPI(Resource):
             
             if existing_availability:
                 skipped_count += 1
-                continue # Skip this date if already set
+                continue 
 
             availability = DoctorAvailability(
                 doctor_id=doctor.id,
@@ -207,7 +203,6 @@ class DoctorAvailabilityAPI(Resource):
         if availability.doctor_id != doctor.id:
             return make_response(jsonify({'message': 'Unauthorized'}), 403)
         
-        # Find all active bookings in this slot
         bookings = Appointment.query.filter(
             Appointment.doctor_id == doctor.id,
             Appointment.appointment_date == availability.date,
@@ -216,9 +211,7 @@ class DoctorAvailabilityAPI(Resource):
             Appointment.status == 'Booked'
         ).all()
 
-        # Cancel bookings and notify patients
         for apt in bookings:
-            # Set status to 'Action Pending' so patient knows they need to reschedule
             apt.status = 'Action Pending'
             
             # Send Email
@@ -262,18 +255,15 @@ class DoctorAvailabilitySlotAPI(Resource):
         except ValueError:
             return make_response(jsonify({'message': 'Invalid time format'}), 400)
 
-        # Calculate datetime objects for arithmetic logic
         dummy_date = datetime(2000, 1, 1).date()
         dt_start = datetime.combine(dummy_date, availability.start_time)
         dt_end = datetime.combine(dummy_date, availability.end_time)
         dt_slot_start = datetime.combine(dummy_date, slot_start)
         dt_slot_end = dt_slot_start + timedelta(minutes=30)
         
-        # Validation: Slot must be within range
         if dt_slot_start < dt_start or dt_slot_end > dt_end:
              return make_response(jsonify({'message': 'Invalid slot time provided'}), 400)
 
-        # 1. Handle Bookings for this specific slot
         bookings = Appointment.query.filter_by(
             doctor_id=doctor.id,
             appointment_date=availability.date,
@@ -298,29 +288,20 @@ Best regards,
 Hospital Management Team"""
             send_email(apt.patient.user.email, subject, body)
 
-        # 2. Adjust Availability (Split or Shrink)
         
-        # Case A: Deleting the very first slot of the range
         if dt_slot_start == dt_start:
             if dt_slot_end == dt_end:
-                # It was the only slot in the range, delete the whole record
                 db.session.delete(availability)
             else:
-                # Shrink range from the start
                 availability.start_time = dt_slot_end.time()
                 
-        # Case B: Deleting the very last slot of the range
         elif dt_slot_end == dt_end:
-            # Shrink range from the end
             availability.end_time = slot_start
             
-        # Case C: Deleting a slot in the middle (Split into two records)
         else:
-            # Original record becomes the left part [start, slot_start]
             original_end = availability.end_time
             availability.end_time = slot_start
             
-            # Create new record for the right part [slot_end, original_end]
             new_avail = DoctorAvailability(
                 doctor_id=doctor.id,
                 date=availability.date,
@@ -419,7 +400,7 @@ class DoctorPatientHistoryAPI(Resource):
     @roles_required('doctor')
     def get(self, patient_id):
         doctor = Doctor.query.filter_by(user_id=current_user.id).first_or_404()
-        patient = Patient.query.get_or_404(patient_id) # Fetch patient details
+        patient = Patient.query.get_or_404(patient_id)
         
         appointments = Appointment.query.filter_by(
             doctor_id=doctor.id,
@@ -437,7 +418,6 @@ class DoctorPatientHistoryAPI(Resource):
                 'notes': treatment.notes if treatment else None
             })
         
-        # Calculate Age
         age = None
         if patient.user.date_of_birth:
             today = datetime.now().date()

@@ -1,6 +1,5 @@
 <template>
   <div class="d-flex" style="min-height: 100vh;">
-    <!-- Main Content -->
     <div class="flex-grow-1">
       <div class="bg-white border-bottom p-4 mb-4 d-flex justify-content-between align-items-center">
         <div>
@@ -8,7 +7,6 @@
           <p class="text-muted mb-0">View and manage your appointments</p>
         </div>
         <div class="d-flex gap-2">
-          <!-- Sorting Dropdown -->
           <select v-model="sortOrder" class="form-select">
             <option value="desc">Newest First</option>
             <option value="asc">Oldest First</option>
@@ -58,7 +56,6 @@
                   </span>
                 </td>
                 <td>
-                  <!-- Cancel Action: Allowed for 'Booked' AND 'Action Pending' -->
                   <button 
                     v-if="apt.status === 'Booked' || apt.status === 'Action Pending'"
                     @click="cancelAppointment(apt.id)"
@@ -67,7 +64,6 @@
                     ❌ Cancel
                   </button>
 
-                  <!-- Reschedule Action (Only Action Pending & >24h Booked) -->
                   <button 
                     v-if="canReschedule(apt)"
                     @click="openRescheduleModal(apt)"
@@ -76,7 +72,6 @@
                     🔄 Reschedule
                   </button>
                   
-                  <!-- Diagnosis Action -->
                   <button 
                     v-if="apt.status === 'Completed' && apt.diagnosis"
                     @click="showDiagnosis(apt)"
@@ -94,7 +89,6 @@
       </div>
     </div>
 
-    <!-- Reschedule Modal -->
     <div v-if="showRescheduleModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -158,7 +152,6 @@
       </div>
     </div>
 
-    <!-- Treatment Detail Modal -->
     <div v-if="selectedTreatment" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -202,7 +195,6 @@ const appointments = ref([])
 const sortOrder = ref('desc')
 const selectedTreatment = ref(null)
 
-// Reschedule State
 const showRescheduleModal = ref(false)
 const selectedRescheduleApt = ref(null)
 const rescheduleData = ref({ date: '', time: '' })
@@ -232,18 +224,13 @@ const getStatusClass = (status) => {
   return classes[status] || 'bg-secondary'
 }
 
-// Logic to enable reschedule button
 const canReschedule = (apt) => {
-  // Allow rescheduling for:
-  // 1. 'Action Pending' (This is set by doctor cancellation or passing date)
-  // 2. 'Booked' appointments more than 24 hours in the future
+
   
   if (apt.status === 'Action Pending') return true;
   
-  // Disable rescheduling for patient-initiated cancellations
   if (apt.status === 'Cancelled') return false;
 
-  // Standard rule for Booked
   if (apt.status === 'Booked') {
     const aptDate = new Date(apt.date);
     const today = new Date();
@@ -252,7 +239,6 @@ const canReschedule = (apt) => {
     const diffTime = aptDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
     
-    // Allow only if > 24h (1 day) ahead
     return diffDays > 1;
   }
 
@@ -289,7 +275,6 @@ const showDiagnosis = (apt) => {
   }
 }
 
-// --- Reschedule Logic ---
 
 const openRescheduleModal = async (apt) => {
   selectedRescheduleApt.value = apt

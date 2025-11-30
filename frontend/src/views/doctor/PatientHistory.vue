@@ -1,8 +1,6 @@
 <template>
   <div class="d-flex" style="min-height: 100vh; background-color: #f8f9fa;">
-    <!-- Main Content -->
     <div class="flex-grow-1">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4 mb-4 d-flex justify-content-between align-items-center">
         <div>
           <h2 class="mb-1">📋 Patient History</h2>
@@ -21,7 +19,6 @@
         </div>
 
         <div v-else>
-          <!-- Patient Info Card -->
           <div class="card mb-4 border-info">
             <div class="card-header bg-light text-info fw-bold">
               👤 Patient Details
@@ -41,7 +38,6 @@
             </div>
           </div>
 
-          <!-- History Records -->
           <div v-if="history.length === 0" class="alert alert-info text-center py-4">
             No medical history records found for this patient.
           </div>
@@ -91,7 +87,6 @@ const patient = ref({})
 onMounted(async () => {
   try {
     const response = await doctorAPI.getPatientHistory(route.params.id)
-    // The API returns an object containing { patient: {}, history: [] }
     patient.value = response.patient || {}
     history.value = response.history || []
   } catch (err) {

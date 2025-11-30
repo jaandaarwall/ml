@@ -1,6 +1,5 @@
 <template>
   <div class="dashboard-content">
-    <!-- Welcome Section -->
     <div class="row mb-4">
       <div class="col-12">
         <div class="card bg-white border-0 shadow-sm">
@@ -15,7 +14,6 @@
       </div>
     </div>
 
-    <!-- Stats Row -->
     <div class="row g-4 mb-4">
       <div class="col-md-4">
         <div class="card h-100 bg-primary text-white border-0 position-relative overflow-hidden">
@@ -60,7 +58,6 @@
       </div>
     </div>
 
-    <!-- Upcoming Appointments Table -->
     <div class="card border-0 mb-4">
       <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
         <h5 class="mb-0 fw-bold">📅 Upcoming Schedule</h5>

@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify
 from backend.celery_app import celery_init_app
-from backend.tasks import example_task, send_daily_reminders, sheduler_task, send_monthly_reports, check_missed_appointments
+from backend.tasks import send_daily_reminders, send_monthly_reports, check_missed_appointments
 from celery.schedules import crontab
 from backend.config import Config
 from backend.Sqldatabase import db
@@ -9,7 +9,6 @@ from backend.user_datastore import user_datastore
 from flask_security import Security, utils
 import time
 from backend.payment_apis import DummyPaymentAPI
-# Import the cache instance
 from backend.cache import cache
 
 
@@ -58,7 +57,6 @@ def init_db(app):
         doctor_role = user_datastore.find_or_create_role(name='doctor', description='Doctor')
         user_role = user_datastore.find_or_create_role(name='user', description='User')
 
-        # Ensure departments exist first
         cardiology = None
         for dept_data in [
             {'name': 'Cardiology', 'description': 'Heart and cardiovascular system', 'price': 300.0},
@@ -79,7 +77,6 @@ def init_db(app):
         
         db.session.commit()
 
-        # Create or Update Admin User
         admin = user_datastore.find_user(email='admin@hospital.com')
         if not admin:
             admin = user_datastore.create_user(
@@ -91,11 +88,9 @@ def init_db(app):
             )
             db.session.commit()
 
-        # Ensure Admin has a Doctor Profile (since they have the doctor role)
         if doctor_role in admin.roles:
             admin_doctor = Doctor.query.filter_by(user_id=admin.id).first()
             if not admin_doctor:
-                # Fetch Cardiology department for default admin doctor profile
                 if not cardiology:
                     cardiology = Department.query.filter_by(name='Cardiology').first()
                 
@@ -109,7 +104,6 @@ def init_db(app):
                 db.session.add(admin_doctor)
                 db.session.commit()
 
-        # Ensure Admin has a Patient Profile (since they have the user role)
         if user_role in admin.roles:
             admin_patient = Patient.query.filter_by(user_id=admin.id).first()
             if not admin_patient:

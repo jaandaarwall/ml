@@ -155,7 +155,6 @@ const checkEmail = async () => {
 }
 
 const handleRegister = async () => {
-  // Validation
   if (!formData.value.username || !formData.value.email || !formData.value.password) {
     errorMessage.value = 'Please fill in all fields'
     return

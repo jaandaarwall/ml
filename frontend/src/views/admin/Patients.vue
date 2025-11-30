@@ -1,14 +1,11 @@
 <template>
   <div class="d-flex" style="height: 100vh;">
-    <!-- Main Content -->
     <div class="flex-grow-1 d-flex flex-column overflow-auto">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4">
         <h1 class="mb-1">👥 Manage Patients</h1>
         <p class="text-muted mb-0">View and manage all patients</p>
       </div>
 
-      <!-- Content -->
       <div class="flex-grow-1 p-4 overflow-auto">
         <div class="mb-3">
           <input 

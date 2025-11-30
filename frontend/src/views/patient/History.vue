@@ -1,8 +1,6 @@
 <template>
   <div class="d-flex" style="min-height: 100vh;">
-    <!-- Main Content -->
     <div class="flex-grow-1">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4 mb-4 d-flex justify-content-between align-items-center">
         <div>
           <h1 class="mb-1">⏰ My Medical History</h1>
@@ -15,7 +13,6 @@
         </button>
       </div>
 
-      <!-- Content -->
       <div class="container-fluid px-4 pb-5">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
@@ -75,7 +72,6 @@
       </div>
     </div>
 
-    <!-- Export Modal -->
     <div v-if="showExportModal" class="modal d-block" style="background: rgba(0,0,0,0.5);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -120,11 +116,9 @@ const history = ref([])
 const showExportModal = ref(false)
 const exportDates = ref({ start: '', end: '' })
 
-// Accordion State
-const activeIndex = ref(0) // Default open the first item
+const activeIndex = ref(0) 
 
 const toggleAccordion = (index) => {
-  // If clicking the currently open item, close it (-1). Otherwise, open the clicked index.
   activeIndex.value = activeIndex.value === index ? -1 : index
 }
 

@@ -12,7 +12,6 @@ class DummyPaymentAPI(Resource):
 
         payment.status = "Success"
         
-        # CHANGE: Update the associated appointment status to 'Booked'
         if payment.appointment:
             payment.appointment.status = "Booked"
             

@@ -1,15 +1,12 @@
 <template>
   <div class="d-flex" style="height: 100vh;">
 
-    <!-- Main Content -->
     <div class="flex-grow-1 d-flex flex-column overflow-auto">
-      <!-- Header -->
       <div class="bg-white border-bottom p-4">
         <h1 class="mb-1">📈 Analytics Dashboard</h1>
         <p class="text-muted mb-0">View system statistics and reports</p>
       </div>
 
-      <!-- Content -->
       <div class="flex-grow-1 p-4 overflow-auto">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
@@ -20,7 +17,6 @@
         <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
 
         <div v-else class="row g-4">
-          <!-- Revenue Chart (Full Width) -->
           <div class="col-12">
             <div class="card h-100">
               <div class="card-header bg-light text-success">
@@ -34,7 +30,6 @@
             </div>
           </div>
 
-          <!-- Appointments Chart -->
           <div class="col-lg-6">
             <div class="card h-100">
               <div class="card-header bg-light">
@@ -48,7 +43,6 @@
             </div>
           </div>
 
-          <!-- Doctors per Department -->
           <div class="col-lg-6">
             <div class="card h-100">
               <div class="card-header bg-light">
@@ -62,7 +56,6 @@
             </div>
           </div>
 
-          <!-- Appointment Status -->
           <div class="col-lg-6">
             <div class="card h-100">
               <div class="card-header bg-light">
@@ -76,7 +69,6 @@
             </div>
           </div>
 
-          <!-- Top Active Doctors -->
           <div class="col-lg-6">
             <div class="card h-100">
               <div class="card-header bg-light">
@@ -120,7 +112,6 @@ const fetchAnalytics = async () => {
     loading.value = false
     await nextTick()
 
-    // Revenue vs Refunds Chart
     if (chartRevenue.value) {
       new Chart(chartRevenue.value.getContext('2d'), {
         type: 'bar',
@@ -164,7 +155,6 @@ const fetchAnalytics = async () => {
       })
     }
 
-    // Appointments vs Cancellations Chart
     if (chartMonth.value) {
       new Chart(chartMonth.value.getContext('2d'), {
         type: 'bar',
@@ -235,7 +225,6 @@ const fetchAnalytics = async () => {
       })
     }
 
-    // Top Active Doctors Chart
     if (chartTopDocs.value) {
       new Chart(chartTopDocs.value.getContext('2d'), {
         type: 'bar',
@@ -302,7 +291,6 @@ onMounted(fetchAnalytics)
   font-weight: 600;
 }
 
-/* Dedicated container to prevent infinite expansion */
 .chart-container {
   position: relative;
   height: 350px;

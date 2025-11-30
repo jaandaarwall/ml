@@ -38,7 +38,6 @@ class LoginAPI(Resource):
 
         login_credentials = request.get_json()
 
-        #data validation
         if not login_credentials:
             result = {
                 'message': 'Login credentials are required.'
@@ -128,7 +127,6 @@ class RegisterAPI(Resource):
         
         user_role = user_datastore.find_role('user')
 
-        # Create user with hashed password
         user = user_datastore.create_user(
             username=username,
             email=email,
@@ -136,7 +134,6 @@ class RegisterAPI(Resource):
             roles = [user_role]
         )
 
-        # Create patient record for the user
         patient = Patient(user_id=user.id)
         db.session.add(patient)
         db.session.commit()
@@ -162,11 +159,9 @@ class ForgotPasswordAPI(Resource):
         user = user_datastore.find_user(email=email)
         
         if user:
-            # Generate a secure temporary password
             alphabet = string.ascii_letters + string.digits
             temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
             
-            # Update user's password in the database
             user.password = utils.hash_password(temp_password)
             db.session.commit()
 
@@ -183,14 +178,11 @@ Best regards,
 Hospital Management Team
             """
             
-            # Send email
             try:
                 send_email(user.email, subject, body)
-                # For development/demo purposes, we also print it to the console
                 print(f"DEBUG: Temporary password for {user.email} is: {temp_password}")
             except Exception as e:
                 print(f"Failed to send email: {e}")
                 return make_response(jsonify({'message': 'Failed to send email. Please try again later.'}), 500)
         
-        # Return success message
         return make_response(jsonify({'message': f'A temporary password has been sent to {email}. Please check your inbox (and spam folder).'}), 200)
